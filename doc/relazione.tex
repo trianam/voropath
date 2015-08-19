@@ -1,0 +1,188 @@
+\documentclass[a4paper,oneside]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{microtype}
+\usepackage{acronym}
+\usepackage{mathtools}
+\usepackage{braket}
+\usepackage{amsfonts}
+\usepackage[hidelinks,breaklinks=true]{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+
+\newcommand{\mr}{\ensuremath{\mathbf{R}}}
+\newcommand{\me}{\ensuremath{\mathrm{e}}}
+\newcommand{\md}{\ensuremath{\mathrm{d}}}
+\newcommand{\expected}[1]{\ensuremath{\mathrm{\textbf{E}}\left[#1\right]}}
+\newcommand{\variance}[1]{\ensuremath{\mathrm{\textbf{Var}}\left(#1\right)}}
+\newcommand{\prob}[1]{\ensuremath{\mathrm{\textbf{P}}\left(#1\right)}}
+\newcommand{\abs}[1]{\ensuremath{\left|#1\right|}}
+\newcommand{\codei}[1]{\texttt{#1}}
+
+\lstdefinestyle{customPy}{
+ language=python,
+ showstringspaces=false,
+ basicstyle=\footnotesize\ttfamily,
+ keywordstyle=\bfseries\color{green!40!black},
+ commentstyle=\itshape\color{purple!40!black},
+ identifierstyle=\color{blue},
+ stringstyle=\color{orange},
+}
+
+%\DeclarePairedDelimiter\abs{\lvert}{\rvert}
+
+\author{
+  {\Large Stefano Martina}\\
+  {\small stefano.martina@stud.unifi.it}\\
+  Universit\`a degli Studi di Firenze\\
+  Scuola di Scienze Matematiche, Fisiche e Naturali\\
+  Corso magistrale di Informatica
+}
+\title{{\Huge\bfseries Path planning con diagrammi di Voronoi}\\{\large\bfseries
+    Esame di Metodi Numerici per la Grafica}}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\vfill
+\begin{abstract}
+  Questo lavoro presenta una breve introduzione ai \acf{VD} e al loro
+  uso nel \acf{PP}.
+\end{abstract}
+\clearpage
+\acresetall
+
+\section*{\aclp{DV}}
+I \acfp{DV} sono definiti a partire da un set di $n$ punti $p_i$ nello spazio,
+intuitivamente \`e un set di $n$ regioni $V(p_i)$, tante quanti i punti
+iniziali, che partizionano lo spazio in
+modo che ogni regione $V(p_i)$ definisce lo spazio dei punti che sono
+pi\`u vicini a $p_i$ rispetto ad ogni altro $p_j$ con $j\ne i$.
+
+Pi\`u formalmente si indica con $P=\{p_1,p_2,\dots,p_n\}\in\mr^2$ il
+set di punti iniziali con coordinate $(x_1, y_1),\dots,(x_n,y_n)$ nel
+piano cartesiano. La regione
+\begin{eqnarray*}
+  V(p_i) &=& \Set{ x\in\mr^2 | d(x,p_i)\le d(x,p_j), \forall p_j\in
+    P\setminus\{p_i\}} \\
+  &=& \bigcap_{p_j\in P\setminus\{p_i\}}\Set{ x\in\mr^2 | d(x,p_i)\le d(x,p_j)}
+\end{eqnarray*}
+dove $d(q,v)$ \`e la distanza tra i due punti $q$ e $v$,
+indica il \emph{poligono planare di Voronoi} associato a $p_i$. $p_i$
+viene chiamato \emph{punto generatore} o semplicemente
+\emph{generatore} di $V(p_i)$.
+
+Il set
+\begin{eqnarray*}
+ V(P) &=& \Set{ V(p_1),\dots,V(p_n)}\\
+ &=&\bigcup_{p_i\in P}V(p_i)\\
+ &=&\bigcup_{p_i\in P}\left[\bigcap_{p_j\in P\setminus\{p_i\}}\Set{ x\in\mr^2 | d(x,p_i)\le d(x,p_j)}\right]
+\end{eqnarray*}
+\`e il \emph{\acl{DV} planare} generato da $P$, o
+\emph{\acl{DV}}
+di $P$. $P$ \`e detto \emph{set generatore} di $V(P)$.
+
+I \acp{DV} sono costituiti esclusivamente da segmenti uniti da
+vertici, formano quindi un reticolo e possono essere assimilati ad un
+grafo. Valgono le propriet\`a:
+\begin{itemize}
+\item un punto $q$ \`e un vertice di $V(P)$ se e solo se la pi\`u grande
+  circonferenza vuota\footnote{Senza nessun punto $p_i\in P$ tra il
+    centro e la circonferenza.} centrata in $q$ ha tre o pi\`u punti
+  $\in P$ sulla circonferenza;
+\item il numero di vertici di $V(P)$ \`e al massimo pari a $2n-5$;
+\item il numero di lati di $V(P)$ \`e al massimo pari a $3n-6$.
+\end{itemize}
+
+\section{Uso dei \aclp{DV} nel \acl{PP}}
+Il problema del \ac{PP} consiste nel trovare il percorso
+ottimale nello spazio
+da un certo punto iniziale $p_s$ ad un certo punto finale
+$p_e$ scansando ostacoli definiti da punti $p_1,\dots, p_n$, dove nel
+caso pi\`u semplice tali punti rappresentano ostacoli puntiformi, nel
+caso più complesso questi rappresentano i vertici di ostacoli
+poligonali.
+
+Esistono diversi metodi per risolvere il \ac{PP}, raggruppati nelle
+categorie:
+\begin{itemize}
+\item basati sul potenziale;
+\item decomposizione di celle;
+\item \emph{roadmap}.
+\end{itemize}
+I \acp{DV} trovano campo nei metodi basati su \emph{roadmap}. In
+generale i metodi \emph{roadmap} cercano di rappresentare lo spazio
+vuoto con grafi, e in seguito su questo grafo viene eseguito un
+algoritmo di ricerca del percorso minimo tra due punti, ad esempio
+quello di Dijkstra. I \acp{DV} possono essere usati per costruire
+suddetto grafo.
+
+Un metodo alternativo per costruire il grafo dello spazio vuoto \`e
+quello del \ac{VG}. Questo consiste nel tracciare un grafo che comprenda tutti i punti
+$p_s,p_e,p_1,\dots,p_n$ dove ogni punto \`e collegato a tutti gli
+altri punti che sono visibili, ossia non coperti da
+ostacoli.
+I vantaggi di usare i \acp{DV} rispetto a \ac{VG} risiede nella
+velocit\`a di calcolo del \ac{DV}, $O(n \log n)$ rispetto a $O(n^2)$,
+e nel fatto che il percorso finale non tocca vertici e lati degli
+ostacoli. Viceversa uno svantaggio di usare \ac{VG} \`e che
+il percorso finale non \`e esattamente il pi\`u breve perch\'e
+potrebbe passare pi\`u vicino agli ostacoli, ma questo pu\`o essere
+mitigato applicando processi di raffinamento del percorso.
+
+Nel caso in cui gli ostacoli siano poligonali occorre eliminare i
+segmenti del \ac{DV} che attraversano i poligoni, ma questo processo
+pu\`o portare in alcuni casi ad eliminare percorsi utili. Il miglior
+approccio quindi consiste nell'aggiungere
+punti ridondanti distribuiti lungo il perimetro, calcolare il \ac{DV}
+su tutti i punti (vertici pi\`u quelli aggiunti) ed eliminare gli
+archi del \ac{DV} che attraversano i poligoni.
+
+Un differente approccio per \ac{PP} nel caso di ostacoli poligonali
+consiste nell'usare i \acp{DVG}. I \acp{DVG} generalizzano i \acp{DV}
+prendendo in considerazione non solo punti ma anche segmenti, quindi
+le regioni sono divise con i criteri:
+\begin{itemize}
+\item nel caso di due punti le due regioni sono divise da una retta
+  perpendicolare al segmento che unisce i punti e passante per il
+  punto mediano\footnote{Come nei \acp{DV}.};
+\item nel caso di un punto ed un segmento le regioni sono divise da una
+  parabola in cui il punto \`e il fuoco ed il vertice \`e il punto
+  mediano del segmento che unisce il punto e la retta
+  perpendicolarmente;
+\item nel caso di due segmenti le regioni sono separate dalla retta
+  bisettrice dell'angolo formato dal prolungamento dei segmenti\footnote{Se i
+  segmenti sono paralleli allora la retta che divide le regioni \`e
+  parallela ai segmenti e passa per il punto medio tra i due
+  segmenti.}.
+\end{itemize}
+Quindi il \ac{DVG} di un insieme di poligoni, costituiti da lati e
+vertici, \`e costituito dall'unione di segmenti e archi di
+parabola. Rispetto al metodo dei punti ridondanti questo \`e pi\`u
+preciso.
+\section{Calcolo del \acl{DV}}
+Per calcolare il \ac{DV} di un insieme di punti viene usato
+l'algoritmo di Fortune.
+
+\newpage
+\section*{Acronimi}
+\addcontentsline{toc}{section}{Acronimi}
+\begin{acronym}[DVG]
+  \acro{DV}{diagramma di Voronoi}
+  \acro{DV}{diagramma di Voronoi generalizzato}
+  \acro{PP}{path planning}
+  \acro{VG}{visibility graph}
+\end{acronym}
+\acrodefplural{DV}[DV]{diagrammi di Voronoi}
+\acrodefplural{DVG}[DVG]{diagrammi di Voronoi generalizzati}
+
+\nocite{*}
+\phantomsection
+\addcontentsline{toc}{section}{\refname}
+%\bibliographystyle{apalike}
+\bibliographystyle{alpha}
+\bibliography{relazione}
+
+\end{document} 
