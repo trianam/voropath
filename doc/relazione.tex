@@ -84,14 +84,18 @@ Il set
 \emph{\acl{DV}}
 di $P$. $P$ \`e detto \emph{set generatore} di $V(P)$.
 
-I \acp{DV} sono costituiti esclusivamente da segmenti uniti da
+I \acp{DV} sono costituiti esclusivamente da segmenti e
+semirette\footnote{Possono esserci delle rette se i vertici sono
+  collineari, \`e costituito solo da segmenti se
+  lo spazio \`e limitato da una bounding box.}uniti da
 vertici, formano quindi un reticolo e possono essere assimilati ad un
 grafo. Valgono le propriet\`a:
 \begin{itemize}
 \item un punto $q$ \`e un vertice di $V(P)$ se e solo se la pi\`u grande
   circonferenza vuota\footnote{Senza nessun punto $p_i\in P$ tra il
     centro e la circonferenza.} centrata in $q$ ha tre o pi\`u punti
-  $\in P$ sulla circonferenza;
+  $\in P$ sulla circonferenza, quindi \`e incidente a tre o pi\`u
+  segmenti o semirette;
 \item il numero di vertici di $V(P)$ \`e al massimo pari a $2n-5$;
 \item il numero di lati di $V(P)$ \`e al massimo pari a $3n-6$.
 \end{itemize}
