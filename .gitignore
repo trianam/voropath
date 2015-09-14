@@ -1,3 +1,7 @@
+## Python files
+*.pyc
+__pycache__/
+
 ## Emacs temporary files
 *~
 
