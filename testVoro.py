@@ -2,14 +2,8 @@
 
 from mpl_toolkits.mplot3d import  axes3d,Axes3D
 import numpy as np
-import scipy as sp
-#import scipy.misc
-#import math
 import matplotlib.pyplot as plt
-import scipy.spatial
-import networkx as nx
 import voronizator
-import utils
 
 voronoi = voronizator.Voronizator()
 

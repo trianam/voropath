@@ -25,28 +25,6 @@ class Voronizator:
                     self._graph.add_edge(tuple(vorVer[ridge[i]]), tuple(vorVer[ridge[(i+1)%len(ridge)]]), weight=np.linalg.norm(vorVer[ridge[i]]-vorVer[ridge[(i+1)%len(ridge)]]))
 
 
-    def _calcStartEnd(self, start, end):
-        minS = 0
-        minE = 0
-        first = True
-        for ver in self._graph.nodes():
-            if(first):
-                startVertex = ver
-                endVertex = ver
-                minS = np.linalg.norm(start-ver)
-                minE = np.linalg.norm(end-ver)
-                first = False
-            else:
-                currS = np.linalg.norm(start-ver)
-                currE = np.linalg.norm(end-ver)
-                if(currS < minS):
-                    startVertex = ver
-                    minS = currS
-                if(currE < minE):
-                    endVertex = ver
-                    minE = currE
-        return (startVertex, endVertex)
-
     def calculateShortestPath(self, start, end):
         startVertex, endVertex = self._calcStartEnd(start, end)
 
