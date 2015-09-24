@@ -26,7 +26,7 @@ class Voronizator:
     def setPolyhedronsSites(self):
         sites = []
         for polyhedron in self._polyhedrons:
-            sites.extend(polyhedron.getMesh())
+            sites.extend(polyhedron.allPoints)
 
         self._sites = np.array(sites)
         
@@ -38,7 +38,8 @@ class Voronizator:
                 if (ridge[i] != -1) and (ridge[(i+1)%len(ridge)] != -1):
                     self._graph.add_edge(tuple(vorVer[ridge[i]]), tuple(vorVer[ridge[(i+1)%len(ridge)]]), weight=np.linalg.norm(vorVer[ridge[i]]-vorVer[ridge[(i+1)%len(ridge)]]))
 
-
+    #def pruneVoroGraph(self):
+                    
     def calculateShortestPath(self, start, end):
         startVertex, endVertex = self._calcStartEnd(start, end)
 
