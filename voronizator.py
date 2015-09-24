@@ -6,16 +6,30 @@ import networkx as nx
 import numpy.linalg
 
 class Voronizator:
-    def __init__(self):
-        self._sites = np.array([])
+    def __init__(self, sites=np.array([])):
+        self._sites = sites
         self._shortestPath = np.array([])
         self._graph = nx.Graph()
+        self._polyhedrons = []
 
+    def setCustomSites(self, sites):
+        self._sites = sites
+        
     def setRandomSites(self, number, seed=None):
         if seed != None:
             np.random.seed(0)
         self._sites = sp.rand(number,3)
 
+    def addPolyhedron(self, polyhedron):
+        self._polyhedrons.append(polyhedron)
+
+    def setPolyhedronsSites(self):
+        sites = []
+        for polyhedron in self._polyhedrons:
+            sites.extend(polyhedron.getMesh())
+
+        self._sites = np.array(sites)
+        
     def makeVoroGraph(self):
         vor = sp.spatial.Voronoi(self._sites)
         vorVer = vor.vertices
