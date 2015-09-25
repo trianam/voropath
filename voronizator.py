@@ -51,6 +51,10 @@ class Voronizator:
     def plotSites(self, plotter):
         plotter.plot(self._sites[:,0], self._sites[:,1], self._sites[:,2], 'o')
 
+    def plotPolyhedrons(self, plotter):
+        for poly in self._polyhedrons:
+            poly.plot(plotter)
+            
     def plotShortestPath(self, plotter):
         plotter.plot(self._shortestPath[:,0], self._shortestPath[:,1], self._shortestPath[:,2], 'r', lw=2)
 

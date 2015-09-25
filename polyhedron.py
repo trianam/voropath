@@ -3,11 +3,28 @@ import math
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 class Polyhedron:
-    _maxEmptyArea = 0.05
+    _maxEmptyArea = 0.1
     
-    def __init__(self, faces=np.array([])):
-        self._faces = faces
-
+    def __init__(self, **pars):
+        """
+        pars can be either:
+           faces -> an np.array of triangular faces
+           a,b,c,d -> lists of the four vertexes of a triangular pyramid
+        """
+        
+        if 'faces' in pars:
+            self._faces = pars['faces']
+        elif 'a' in pars and 'b' in pars and 'c' in pars:
+            a = pars['a']
+            b = pars['b']
+            c = pars['c']
+            d = pars['d']
+            self._faces = np.array([
+                [a,b,c],
+                [a,b,d],
+                [b,c,d],
+                [c,a,d]
+            ])
         triangles = []
         allPoints = []
 
@@ -51,7 +68,7 @@ class Polyhedron:
     _comb3 = lambda self,a,b,c: 0.33*a + 0.33*b + 0.33*c
         
     def plotAllPoints(self, plotter):
-        plotter.plot(self.allPoints[:,0], self.allPoints[:,1], self.allPoints[:,2], 'o')
+        plotter.plot(self.allPoints[:,0], self.allPoints[:,1], self.allPoints[:,2], 'ob')
 
     #def cross(self, pointA, pointB):
         #for face in self._faces:
