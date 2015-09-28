@@ -18,19 +18,18 @@ Vs = np.array([0.,0.,0.])
 Ve = np.array([1.,1.,1.])
 
 voronoi.addPolyhedron(poly1)
-
+#voronoi.addBoundingBox([-1.,-1.,-1.], [2.,2.,2.])
 voronoi.setPolyhedronsSites()
-#voronoi.pruneVoroGraph()
 voronoi.makeVoroGraph()
 voronoi.calculateShortestPath(Vs, Ve)
 
-voronoi.plotSites(ax)
+#voronoi.plotSites(ax)
 voronoi.plotPolyhedrons(ax)
 voronoi.plotShortestPath(ax)
-voronoi.plotGraph(ax)
+#voronoi.plotGraph(ax, edges=False, labels=False)
 
-ax.set_xlim3d(0., 1.)
-ax.set_ylim3d(0., 1.)
-ax.set_zlim3d(0., 1.)
+ax.set_xlim3d(-1., 2.)
+ax.set_ylim3d(-1., 2.)
+ax.set_zlim3d(-1., 2.)
             
 plt.show()

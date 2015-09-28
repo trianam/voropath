@@ -4,6 +4,7 @@ import scipy as sp
 import scipy.spatial
 import networkx as nx
 import numpy.linalg
+import polyhedron
 
 class Voronizator:
     def __init__(self, sites=np.array([])):
@@ -23,6 +24,19 @@ class Voronizator:
     def addPolyhedron(self, polyhedron):
         self._polyhedrons.append(polyhedron)
 
+    def addBoundingBox(self, a, b):
+        c = [a[0], b[1], a[2]]
+        d = [b[0], a[1], a[2]]
+        e = [a[0], a[1], b[2]]
+        f = [b[0], b[1], a[2]]
+        g = [b[0], a[1], b[2]]
+        h = [a[0], b[1], b[2]]
+
+        self._polyhedrons.append(polyhedron.Polyhedron(faces=np.array([
+            [a,g,e],[a,d,g],[d,f,g],[f,b,g],[f,b,h],[f,h,c],
+            [h,a,e],[h,c,a],[e,h,g],[h,b,g],[a,d,f],[a,f,c]
+            ]), invisible=True))
+
     def setPolyhedronsSites(self):
         sites = []
         for polyhedron in self._polyhedrons:
@@ -30,15 +44,22 @@ class Voronizator:
 
         self._sites = np.array(sites)
         
-    def makeVoroGraph(self):
+    def makeVoroGraph(self, prune=True):
         vor = sp.spatial.Voronoi(self._sites)
         vorVer = vor.vertices
         for ridge in vor.ridge_vertices:
             for i in range(len(ridge)):
                 if (ridge[i] != -1) and (ridge[(i+1)%len(ridge)] != -1):
-                    self._graph.add_edge(tuple(vorVer[ridge[i]]), tuple(vorVer[ridge[(i+1)%len(ridge)]]), weight=np.linalg.norm(vorVer[ridge[i]]-vorVer[ridge[(i+1)%len(ridge)]]))
+                    a = vorVer[ridge[i]]
+                    b = vorVer[ridge[(i+1)%len(ridge)]]
+                    if (not prune) or (not self._intersectPolyhedrons(a,b)):
+                        self._graph.add_edge(tuple(a), tuple(b), weight=np.linalg.norm(a-b))
 
-    #def pruneVoroGraph(self):
+    def _intersectPolyhedrons(self, a, b):
+        for polyhedron in self._polyhedrons:
+            if polyhedron.intersectSegment(a,b):
+                return True
+        return False
                     
     def calculateShortestPath(self, start, end):
         startVertex, endVertex = self._calcStartEnd(start, end)
@@ -57,16 +78,21 @@ class Voronizator:
             
     def plotShortestPath(self, plotter):
         plotter.plot(self._shortestPath[:,0], self._shortestPath[:,1], self._shortestPath[:,2], 'r', lw=2)
+        plotter.plot([self._shortestPath[0][0]], [self._shortestPath[0][1]], [self._shortestPath[0][2]], 'ro')
+        plotter.plot([self._shortestPath[-1][0]], [self._shortestPath[-1][1]], [self._shortestPath[-1][2]], 'ro')
 
-    def plotGraph(self, plotter):
-        i = 0
-        for ver in self._graph.nodes():
-            plotter.plot([ver[0]], [ver[1]], [ver[2]], 'og')
-            plotter.text(ver[0], ver[1], ver[2], i, color='red')
-            i = i+1
+    def plotGraph(self, plotter, vertexes=True, edges=True, labels=True):
+        if vertexes:
+            i = 0
+            for ver in self._graph.nodes():
+                plotter.plot([ver[0]], [ver[1]], [ver[2]], 'og')
+                if labels:
+                    plotter.text(ver[0], ver[1], ver[2], i, color='red')
+                    i = i+1
 
-        for edge in self._graph.edges():
-            plotter.plot([edge[0][0], edge[1][0]], [edge[0][1], edge[1][1]], [edge[0][2], edge[1][2]], 'k--')
+        if edges:
+            for edge in self._graph.edges():
+                plotter.plot([edge[0][0], edge[1][0]], [edge[0][1], edge[1][1]], [edge[0][2], edge[1][2]], 'k--')
 
     def _calcStartEnd(self, start, end):
         minS = 0

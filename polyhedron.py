@@ -7,9 +7,10 @@ class Polyhedron:
     
     def __init__(self, **pars):
         """
-        pars can be either:
+        pars can be one of:
            faces -> an np.array of triangular faces
            a,b,c,d -> lists of the four vertexes of a triangular pyramid
+        if invisible=True when plot will be called it will be useless
         """
         
         if 'faces' in pars:
@@ -25,6 +26,12 @@ class Polyhedron:
                 [b,c,d],
                 [c,a,d]
             ])
+
+        if 'invisible' in pars:
+            self._invisible = pars['invisible']
+        else:
+            self._invisible = False
+            
         triangles = []
         allPoints = []
 
@@ -70,13 +77,14 @@ class Polyhedron:
     def plotAllPoints(self, plotter):
         plotter.plot(self.allPoints[:,0], self.allPoints[:,1], self.allPoints[:,2], 'ob')
 
-    #def cross(self, pointA, pointB):
+    def intersectSegment(self, a, b):
         #for face in self._faces:
         #    if
-    #    return False
+        return False
 
     def plot(self, plotter):
-        col = Poly3DCollection(self._faces)
-        col.set_color('y')
-        col.set_edgecolor('k')
-        plotter.add_collection3d(col)
+        if self._invisible == False:
+            col = Poly3DCollection(self._faces)
+            col.set_color('y')
+            col.set_edgecolor('k')
+            plotter.add_collection3d(col)
