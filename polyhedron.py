@@ -85,9 +85,12 @@ class Polyhedron:
                 ).T,np.array([0,1,1,1]))
             )
             B = np.append(-1*a,1)
-            x = np.linalg.solve(A,B)
-            if (x[0] >= 0.) and (x[0] <= 1.) and (x[1] >= 0.) and (x[2] >= 0.) and (x[3] >= 0.):
-                return True
+            try:
+                x = np.linalg.solve(A,B)
+                if (x[0] >= 0.) and (x[0] <= 1.) and (x[1] >= 0.) and (x[2] >= 0.) and (x[3] >= 0.):
+                    return True
+            except np.linalg.linalg.LinAlgError:
+                pass
 
         return False
 
