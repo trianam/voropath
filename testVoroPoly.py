@@ -23,13 +23,18 @@ voronoi.setPolyhedronsSites()
 voronoi.makeVoroGraph()
 voronoi.calculateShortestPath(Vs, Ve)
 
-#voronoi.plotSites(ax)
+voronoi.plotSites(ax)
 voronoi.plotPolyhedrons(ax)
 voronoi.plotShortestPath(ax)
 #voronoi.plotGraph(ax, edges=False, labels=False)
+voronoi.plotGraph(ax, labels=False)
 
-ax.set_xlim3d(-1., 2.)
-ax.set_ylim3d(-1., 2.)
-ax.set_zlim3d(-1., 2.)
-            
+# ax.set_xlim3d(-1., 2.)
+# ax.set_ylim3d(-1., 2.)
+# ax.set_zlim3d(-1., 2.)
+
+ax.set_xlim3d(0., 1.)
+ax.set_ylim3d(0., 1.)
+ax.set_zlim3d(0., 1.)
+
 plt.show()

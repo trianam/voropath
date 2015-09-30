@@ -78,8 +78,17 @@ class Polyhedron:
         plotter.plot(self.allPoints[:,0], self.allPoints[:,1], self.allPoints[:,2], 'ob')
 
     def intersectSegment(self, a, b):
-        #for face in self._faces:
-        #    if
+        for triangle in self._faces:
+            A = np.vstack(
+                (np.vstack(
+                    ((b-a), -1*triangle[0], -1*triangle[1], -1*triangle[2])
+                ).T,np.array([0,1,1,1]))
+            )
+            B = np.append(-1*a,1)
+            x = np.linalg.solve(A,B)
+            if (x[0] >= 0.) and (x[0] <= 1.) and (x[1] >= 0.) and (x[2] >= 0.) and (x[3] >= 0.):
+                return True
+
         return False
 
     def plot(self, plotter):
