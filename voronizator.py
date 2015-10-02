@@ -75,7 +75,8 @@ class Voronizator:
         self._shortestPath = np.array(path)
 
     def plotSites(self, plotter):
-        plotter.plot(self._sites[:,0], self._sites[:,1], self._sites[:,2], 'o')
+        if self._sites.size > 0:
+            plotter.plot(self._sites[:,0], self._sites[:,1], self._sites[:,2], 'o')
 
     def plotPolyhedrons(self, plotter):
         for poly in self._polyhedrons:
