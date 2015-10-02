@@ -12,6 +12,8 @@ class Voronizator:
         self._shortestPath = np.array([])
         self._graph = nx.Graph()
         self._polyhedrons = []
+        self._pathStart = np.array([])
+        self._pathEnd = np.array([])
 
     def setCustomSites(self, sites):
         self._sites = sites
@@ -70,7 +72,9 @@ class Voronizator:
 
         try:
             length,path=nx.bidirectional_dijkstra(self._graph, tuple(start), tuple(end))
-        except nx.NetworkXNoPath:
+            self._pathStart = start
+            self._pathEnd = end
+        except (nx.NetworkXNoPath, nx.NetworkXError):
             path = []
         self._shortestPath = np.array(path)
 
@@ -88,16 +92,18 @@ class Voronizator:
             plotter.plot([self._shortestPath[0][0]], [self._shortestPath[0][1]], [self._shortestPath[0][2]], 'ro')
             plotter.plot([self._shortestPath[-1][0]], [self._shortestPath[-1][1]], [self._shortestPath[-1][2]], 'ro')
 
-    def plotGraph(self, plotter, vertexes=True, edges=True, labels=True):
+    def plotGraph(self, plotter, vertexes=True, edges=True, labels=False, pathExtremes=False):
         if vertexes:
             i = 0
             for ver in self._graph.nodes():
-                plotter.plot([ver[0]], [ver[1]], [ver[2]], 'og')
-                if labels:
-                    plotter.text(ver[0], ver[1], ver[2], i, color='red')
-                    i = i+1
+                if pathExtremes==True or (ver!=tuple(self._pathStart) and ver!=tuple(self._pathEnd)):
+                    plotter.plot([ver[0]], [ver[1]], [ver[2]], 'og')
+                    if labels:
+                        plotter.text(ver[0], ver[1], ver[2], i, color='red')
+                i = i+1
 
         if edges:
             for edge in self._graph.edges():
-                plotter.plot([edge[0][0], edge[1][0]], [edge[0][1], edge[1][1]], [edge[0][2], edge[1][2]], 'k--')
+                if pathExtremes==True or (edge[0]!=tuple(self._pathStart) and edge[0]!=tuple(self._pathEnd) and edge[1]!=tuple(self._pathStart) and edge[1]!=tuple(self._pathEnd)):
+                    plotter.plot([edge[0][0], edge[1][0]], [edge[0][1], edge[1][1]], [edge[0][2], edge[1][2]], 'k--')
 

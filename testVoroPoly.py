@@ -30,9 +30,10 @@ voronoi.calculateShortestPath(Vs, Ve)
 
 #voronoi.plotSites(ax)
 voronoi.plotPolyhedrons(ax)
+#voronoi.plotGraph(ax, edges=False, labels=True)
+voronoi.plotGraph(ax, pathExtremes=True)
+#voronoi.plotGraph(ax)
 voronoi.plotShortestPath(ax)
-#voronoi.plotGraph(ax, edges=False, labels=False)
-#voronoi.plotGraph(ax, labels=False)
 
 ax.set_xlim3d(-1., 2.)
 ax.set_ylim3d(-1., 2.)
