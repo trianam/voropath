@@ -26,7 +26,7 @@ class Voronizator:
     def addPolyhedron(self, polyhedron):
         self._polyhedrons.append(polyhedron)
 
-    def addBoundingBox(self, a, b):
+    def addBoundingBox(self, a, b, maxEmptyArea=1, invisible=True):
         c = [a[0], b[1], a[2]]
         d = [b[0], a[1], a[2]]
         e = [a[0], a[1], b[2]]
@@ -37,7 +37,7 @@ class Voronizator:
         self._polyhedrons.append(polyhedron.Polyhedron(faces=np.array([
             [a,g,e],[a,d,g],[d,f,g],[f,b,g],[f,b,h],[f,h,c],
             [h,a,e],[h,c,a],[e,h,g],[h,b,g],[a,d,f],[a,f,c]
-            ]), invisible=True))
+            ]), invisible=invisible, maxEmptyArea=maxEmptyArea))
 
     def setPolyhedronsSites(self):
         sites = []
@@ -57,8 +57,14 @@ class Voronizator:
                     if (not prune) or (not self._intersectPolyhedrons(a,b)):
                         self._graph.add_edge(tuple(a), tuple(b), weight=np.linalg.norm(a-b))
 
-    def calculateShortestPath(self, start, end, prune=True):
-        self._attachToGraph(start, end, prune)
+    def calculateShortestPath(self, start, end, attachMode='near', prune=True):
+        if attachMode=='near':
+            self._attachToGraphNear(start, end, prune)
+        elif attachMode=='all':
+            self._attachToGraphAll(start, end, prune)
+        else:
+            self._attachToGraphNear(start, end, prune)
+            
         self._pathStart = start
         self._pathEnd = end
 
@@ -105,7 +111,7 @@ class Voronizator:
                 return True
         return False
                     
-    def _attachToGraph(self, start, end, prune):
+    def _attachToGraphNear(self, start, end, prune):
         firstS = True
         firstE = True
         minAttachS = None
@@ -139,6 +145,13 @@ class Voronizator:
             self._graph.add_edge(tuple(start), minAttachS, weight=minDistS)
         if minAttachE != None:
             self._graph.add_edge(tuple(end), minAttachE, weight=minDistE)
+
+    def _attachToGraphAll(self, start, end, prune):
+        for node in self._graph.nodes():
+            if (not prune) or (not self._intersectPolyhedrons(start,np.array(node))):
+                self._graph.add_edge(tuple(start), node, weight=np.linalg.norm(start-np.array(node)))
+            if (not prune) or (not self._intersectPolyhedrons(end,np.array(node))):
+                self._graph.add_edge(tuple(end), node, weight=np.linalg.norm(end-np.array(node)))
 
 
 

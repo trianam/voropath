@@ -3,8 +3,6 @@ import math
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 class Polyhedron:
-    _maxEmptyArea = 0.1
-    
     def __init__(self, **pars):
         """
         pars can be one of:
@@ -12,7 +10,11 @@ class Polyhedron:
            a,b,c,d -> lists of the four vertexes of a triangular pyramid
         if invisible=True when plot will be called it will be useless
         """
-        
+        if 'maxEmptyArea' in pars:
+            maxEmptyArea = pars['maxEmptyArea']
+        else:
+            maxEmptyArea = 0.1
+
         if 'faces' in pars:
             self._faces = pars['faces']
         elif 'a' in pars and 'b' in pars and 'c' in pars:
@@ -49,7 +51,7 @@ class Polyhedron:
                 allPoints.append(b)
             if not any((c == x).all() for x in allPoints):
                 allPoints.append(c)
-            if (self._area(triangle) > Polyhedron._maxEmptyArea):
+            if (self._area(triangle) > maxEmptyArea):
                 ab = self._comb2(a,b)
                 bc = self._comb2(b,c)
                 ca = self._comb2(c,a)
