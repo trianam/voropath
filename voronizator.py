@@ -61,12 +61,17 @@ class Voronizator:
                 return True
         return False
                     
-    def calculateShortestPath(self, start, end):
-        startVertex, endVertex = self._calcStartEnd(start, end)
+    def calculateShortestPath(self, start, end, prune=True):
+        for node in self._graph.nodes():
+            if (not prune) or (not self._intersectPolyhedrons(start,np.array(node))):
+                self._graph.add_edge(tuple(start), node, weight=np.linalg.norm(start-node))
+            if (not prune) or (not self._intersectPolyhedrons(end,np.array(node))):
+                self._graph.add_edge(tuple(end), node, weight=np.linalg.norm(end-node))
 
-        length,path=nx.bidirectional_dijkstra(self._graph,startVertex,endVertex)
-        path.insert(0,start)
-        path.append(end)
+        try:
+            length,path=nx.bidirectional_dijkstra(self._graph, tuple(start), tuple(end))
+        except nx.NetworkXNoPath:
+            path = []
         self._shortestPath = np.array(path)
 
     def plotSites(self, plotter):
@@ -77,9 +82,10 @@ class Voronizator:
             poly.plot(plotter)
             
     def plotShortestPath(self, plotter):
-        plotter.plot(self._shortestPath[:,0], self._shortestPath[:,1], self._shortestPath[:,2], 'r', lw=2)
-        plotter.plot([self._shortestPath[0][0]], [self._shortestPath[0][1]], [self._shortestPath[0][2]], 'ro')
-        plotter.plot([self._shortestPath[-1][0]], [self._shortestPath[-1][1]], [self._shortestPath[-1][2]], 'ro')
+        if self._shortestPath.size > 0:
+            plotter.plot(self._shortestPath[:,0], self._shortestPath[:,1], self._shortestPath[:,2], 'r', lw=2)
+            plotter.plot([self._shortestPath[0][0]], [self._shortestPath[0][1]], [self._shortestPath[0][2]], 'ro')
+            plotter.plot([self._shortestPath[-1][0]], [self._shortestPath[-1][1]], [self._shortestPath[-1][2]], 'ro')
 
     def plotGraph(self, plotter, vertexes=True, edges=True, labels=True):
         if vertexes:
@@ -93,26 +99,4 @@ class Voronizator:
         if edges:
             for edge in self._graph.edges():
                 plotter.plot([edge[0][0], edge[1][0]], [edge[0][1], edge[1][1]], [edge[0][2], edge[1][2]], 'k--')
-
-    def _calcStartEnd(self, start, end):
-        minS = 0
-        minE = 0
-        first = True
-        for ver in self._graph.nodes():
-            if(first):
-                startVertex = ver
-                endVertex = ver
-                minS = np.linalg.norm(start-ver)
-                minE = np.linalg.norm(end-ver)
-                first = False
-            else:
-                currS = np.linalg.norm(start-ver)
-                currE = np.linalg.norm(end-ver)
-                if(currS < minS):
-                    startVertex = ver
-                    minS = currS
-                if(currE < minE):
-                    endVertex = ver
-                    minE = currE
-        return (startVertex, endVertex)
 
