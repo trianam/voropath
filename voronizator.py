@@ -57,23 +57,13 @@ class Voronizator:
                     if (not prune) or (not self._intersectPolyhedrons(a,b)):
                         self._graph.add_edge(tuple(a), tuple(b), weight=np.linalg.norm(a-b))
 
-    def _intersectPolyhedrons(self, a, b):
-        for polyhedron in self._polyhedrons:
-            if polyhedron.intersectSegment(a,b):
-                return True
-        return False
-                    
     def calculateShortestPath(self, start, end, prune=True):
-        for node in self._graph.nodes():
-            if (not prune) or (not self._intersectPolyhedrons(start,np.array(node))):
-                self._graph.add_edge(tuple(start), node, weight=np.linalg.norm(start-np.array(node)))
-            if (not prune) or (not self._intersectPolyhedrons(end,np.array(node))):
-                self._graph.add_edge(tuple(end), node, weight=np.linalg.norm(end-np.array(node)))
+        self._attachToGraph(start, end, prune)
+        self._pathStart = start
+        self._pathEnd = end
 
         try:
             length,path=nx.bidirectional_dijkstra(self._graph, tuple(start), tuple(end))
-            self._pathStart = start
-            self._pathEnd = end
         except (nx.NetworkXNoPath, nx.NetworkXError):
             path = []
         self._shortestPath = np.array(path)
@@ -89,8 +79,10 @@ class Voronizator:
     def plotShortestPath(self, plotter):
         if self._shortestPath.size > 0:
             plotter.plot(self._shortestPath[:,0], self._shortestPath[:,1], self._shortestPath[:,2], 'r', lw=2)
-            plotter.plot([self._shortestPath[0][0]], [self._shortestPath[0][1]], [self._shortestPath[0][2]], 'ro')
-            plotter.plot([self._shortestPath[-1][0]], [self._shortestPath[-1][1]], [self._shortestPath[-1][2]], 'ro')
+        if self._pathStart.size > 0:
+            plotter.plot([self._pathStart[0]], [self._pathStart[1]], [self._pathStart[2]], 'ro')
+        if self._pathEnd.size > 0:
+            plotter.plot([self._pathEnd[0]], [self._pathEnd[1]], [self._pathEnd[2]], 'ro')
 
     def plotGraph(self, plotter, vertexes=True, edges=True, labels=False, pathExtremes=False):
         if vertexes:
@@ -106,4 +98,48 @@ class Voronizator:
             for edge in self._graph.edges():
                 if pathExtremes==True or (edge[0]!=tuple(self._pathStart) and edge[0]!=tuple(self._pathEnd) and edge[1]!=tuple(self._pathStart) and edge[1]!=tuple(self._pathEnd)):
                     plotter.plot([edge[0][0], edge[1][0]], [edge[0][1], edge[1][1]], [edge[0][2], edge[1][2]], 'k--')
+
+    def _intersectPolyhedrons(self, a, b):
+        for polyhedron in self._polyhedrons:
+            if polyhedron.intersectSegment(a,b):
+                return True
+        return False
+                    
+    def _attachToGraph(self, start, end, prune):
+        firstS = True
+        firstE = True
+        minAttachS = None
+        minAttachE = None
+        minDistS = 0.
+        minDistE = 0.
+        for node in self._graph.nodes():
+            if (not prune) or (not self._intersectPolyhedrons(start,np.array(node))):
+                if firstS:
+                    minAttachS = node
+                    minDistS = np.linalg.norm(start-np.array(node))
+                    firstS = False
+                else:
+                    currDist = np.linalg.norm(start-np.array(node))
+                    if currDist < minDistS:
+                        minAttachS = node
+                        minDistS = currDist
+                    
+            if (not prune) or (not self._intersectPolyhedrons(end,np.array(node))):
+                if firstE:
+                    minAttachE = node
+                    minDistE = np.linalg.norm(end-np.array(node))
+                    firstE = False
+                else:
+                    currDist = np.linalg.norm(end-np.array(node))
+                    if currDist < minDistE:
+                        minAttachE = node
+                        minDistE = currDist
+
+        if minAttachS != None:
+            self._graph.add_edge(tuple(start), minAttachS, weight=minDistS)
+        if minAttachE != None:
+            self._graph.add_edge(tuple(end), minAttachE, weight=minDistE)
+
+
+
 
