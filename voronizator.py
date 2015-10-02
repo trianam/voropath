@@ -64,9 +64,9 @@ class Voronizator:
     def calculateShortestPath(self, start, end, prune=True):
         for node in self._graph.nodes():
             if (not prune) or (not self._intersectPolyhedrons(start,np.array(node))):
-                self._graph.add_edge(tuple(start), node, weight=np.linalg.norm(start-node))
+                self._graph.add_edge(tuple(start), node, weight=np.linalg.norm(start-np.array(node)))
             if (not prune) or (not self._intersectPolyhedrons(end,np.array(node))):
-                self._graph.add_edge(tuple(end), node, weight=np.linalg.norm(end-node))
+                self._graph.add_edge(tuple(end), node, weight=np.linalg.norm(end-np.array(node)))
 
         try:
             length,path=nx.bidirectional_dijkstra(self._graph, tuple(start), tuple(end))
