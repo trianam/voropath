@@ -17,7 +17,7 @@ class Polyhedron:
 
         if 'faces' in pars:
             self._faces = pars['faces']
-        elif 'a' in pars and 'b' in pars and 'c' in pars:
+        elif 'a' in pars and 'b' in pars and 'c' in pars and 'd' in pars:
             a = pars['a']
             b = pars['b']
             c = pars['c']
@@ -96,6 +96,20 @@ class Polyhedron:
 
         return False
 
+    def intersectTriangle(self, a, b, c):
+        triangle = Polyhedron(faces=np.array([[a,b,c]]))
+        for face in self._faces:
+            if (
+                    self.intersectSegment(a,b) or
+                    self.intersectSegment(b,c) or
+                    self.intersectSegment(c,a) or
+                    triangle.intersectSegment(face[0], face[1]) or
+                    triangle.intersectSegment(face[1], face[2]) or
+                    triangle.intersectSegment(face[2], face[0])):
+                return True
+        return False
+                
+                    
     def plot(self, plotter):
         if self._invisible == False:
             col = Poly3DCollection(self._faces)

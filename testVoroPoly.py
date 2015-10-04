@@ -29,6 +29,7 @@ voronoi.addPolyhedron(poly3)
 voronoi.setPolyhedronsSites()
 voronoi.makeVoroGraph()
 voronoi.calculateShortestPath(Vs, Ve, 'near')
+#voronoi.calculateShortestPath(Vs, Ve, 'all')
 
 #voronoi.plotSites(ax)
 voronoi.plotPolyhedrons(ax)
