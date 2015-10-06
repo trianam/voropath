@@ -28,9 +28,6 @@ class Voronizator:
     def addPolyhedron(self, polyhedron):
         self._polyhedrons.append(polyhedron)
 
-    def addTestPolyhedron(self):
-        self._polyhedrons.append(polyhedron.Polyhedron(a = [0.1,0.1,0.1], b = [0.3,0.3,0.1], c = [0.4,0.2,0.2], d = [0.1,0.2,0.2]))
-
     def addBoundingBox(self, a, b, maxEmptyArea=1, invisible=True):
         c = [a[0], b[1], a[2]]
         d = [b[0], a[1], a[2]]
@@ -62,56 +59,6 @@ class Voronizator:
                     if (not prune) or (not self._segmentIntersectPolyhedrons(a,b)):
                         self._graph.add_edge(tuple(a), tuple(b), weight=np.linalg.norm(a-b))
 
-    def makeTestGraph(self):
-        a = (0., 0. ,0.)
-        b = (0.25, 0.15, 0.18)
-        self._graph.add_edge(a, b, weight=np.linalg.norm(np.array(a)-np.array(b)))
-
-        a = b
-        b = (0.25, 0.2, 0.22)
-        self._graph.add_edge(a, b, weight=np.linalg.norm(np.array(a)-np.array(b)))
-
-        a = b
-        b = (0.25, 0.25, 0.18)
-        #b = (0.25, 0.25, 0.4)
-        self._graph.add_edge(a, b, weight=np.linalg.norm(np.array(a)-np.array(b)))
-
-        a = b
-        b = (1., 1., 1.)
-        self._graph.add_edge(a, b, weight=np.linalg.norm(np.array(a)-np.array(b)))
-
-        a = (0., 0. ,0.)
-        b = (0.25, 0.15, 0.)
-        self._graph.add_edge(a, b, weight=np.linalg.norm(np.array(a)-np.array(b)))
-
-        a = b
-        b = (0.4, 0.4, 0.)
-        self._graph.add_edge(a, b, weight=np.linalg.norm(np.array(a)-np.array(b)))
-
-        a = b
-        b = (0.8, 0., 0.)
-        self._graph.add_edge(a, b, weight=np.linalg.norm(np.array(a)-np.array(b)))
-        
-        a = b
-        b = (0.8, 1., 0.)
-        self._graph.add_edge(a, b, weight=np.linalg.norm(np.array(a)-np.array(b)))
-
-        a = b
-        b = (0.8, 1., 1.)
-        self._graph.add_edge(a, b, weight=np.linalg.norm(np.array(a)-np.array(b)))
-
-        a = b
-        b = (0., 1., 1.)
-        self._graph.add_edge(a, b, weight=np.linalg.norm(np.array(a)-np.array(b)))
-
-        a = b
-        b = (1., 0., 1.)
-        self._graph.add_edge(a, b, weight=np.linalg.norm(np.array(a)-np.array(b)))
-
-        a = b
-        b = (1., 1., 1.)
-        self._graph.add_edge(a, b, weight=np.linalg.norm(np.array(a)-np.array(b)))
-
     def calculateShortestPath(self, start, end, attachMode='near', prune=True):
         if attachMode=='near':
             self._attachToGraphNear(start, end, prune)
@@ -131,12 +78,6 @@ class Voronizator:
         #     path = []
         #self._shortestPath = np.array(path)
 
-    def calculateTestShortestPath(self):
-        self._pathStart = np.array([0.,0.,0.])
-        self._pathEnd = np.array([1.,1.,1.])
-
-        self._shortestPath = self._dijkstraPlus(self._pathStart, self._pathEnd)
-        
     def plotSites(self, plotter):
         if self._sites.size > 0:
             plotter.plot(self._sites[:,0], self._sites[:,1], self._sites[:,2], 'o')
