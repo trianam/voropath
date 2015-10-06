@@ -5,9 +5,10 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 class Polyhedron:
     def __init__(self, **pars):
         """
+        can be composed only by combined triangles
         pars can be one of:
            faces -> an np.array of triangular faces
-           a,b,c,d -> lists of the four vertexes of a triangular pyramid
+           a,b,c,d -> lists of the four vertexes of a tetrahedron
         if invisible=True when plot will be called it will be useless
         """
         if 'maxEmptyArea' in pars:
@@ -96,17 +97,18 @@ class Polyhedron:
 
         return False
 
-    def intersectTriangle(self, a, b, c):
-        triangle = Polyhedron(faces=np.array([[a,b,c]]))
-        for face in self._faces:
-            if (
-                    self.intersectSegment(a,b) or
-                    self.intersectSegment(b,c) or
-                    self.intersectSegment(c,a) or
-                    triangle.intersectSegment(face[0], face[1]) or
-                    triangle.intersectSegment(face[1], face[2]) or
-                    triangle.intersectSegment(face[2], face[0])):
-                return True
+    def intersectPolyhedron(self, polyhedron):
+        """alert, not case of one polyhedron inside other"""
+        for otherFace in polyhedron._faces:
+            for myFace in self._faces:
+                if (
+                        self.intersectSegment(otherFace[0],otherFace[1]) or
+                        self.intersectSegment(otherFace[1],otherFace[2]) or
+                        self.intersectSegment(otherFace[2],otherFace[0]) or
+                        polyhedron.intersectSegment(myFace[0], myFace[1]) or
+                        polyhedron.intersectSegment(myFace[1], myFace[2]) or
+                        polyhedron.intersectSegment(myFace[2], myFace[0])):
+                    return True
         return False
                 
                     
