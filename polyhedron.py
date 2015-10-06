@@ -87,12 +87,14 @@ class Polyhedron:
             #        v+w+s = 1
             #      }
             # for variables k, v, w, s
+
             A = np.vstack(
                 (np.vstack(
-                    ((b-a), -1*triangle[0], -1*triangle[1], -1*triangle[2])
-                ).T,np.array([0,1,1,1]))
+                    ((b-a), -triangle[0], -triangle[1], -triangle[2])
+                ).T,np.array([0.,1.,1.,1.]))
             )
-            B = np.append(-1*a,1)
+            B = np.append(-a,1.)
+
             try:
                 x = np.linalg.solve(A,B)
                 # check if
