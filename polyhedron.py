@@ -82,6 +82,11 @@ class Polyhedron:
 
     def intersectSegment(self, a, b):
         for triangle in self._faces:
+            #solve {
+            #        a+k(b-a) = v*triangle[0] + w*triangle[1] + s*triangle[2]
+            #        v+w+s = 1
+            #      }
+            # for variables k, v, w, s
             A = np.vstack(
                 (np.vstack(
                     ((b-a), -1*triangle[0], -1*triangle[1], -1*triangle[2])
@@ -90,6 +95,11 @@ class Polyhedron:
             B = np.append(-1*a,1)
             try:
                 x = np.linalg.solve(A,B)
+                # check if
+                #          0 <= k <= 1,
+                #          v >= 0
+                #          w >= 0
+                #          s >= 0
                 if (x[0] >= 0.) and (x[0] <= 1.) and (x[1] >= 0.) and (x[2] >= 0.) and (x[3] >= 0.):
                     return True
             except np.linalg.linalg.LinAlgError:
