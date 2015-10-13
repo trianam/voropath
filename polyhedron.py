@@ -35,35 +35,36 @@ class Polyhedron:
         else:
             self._invisible = False
             
-        triangles = []
         allPoints = []
+        if (not 'distributePoints' in pars) or (pars['distributePoints'] == True):
+            triangles = []
 
-        for face in self._faces:
-            triangles.append(face)
-            
-        while triangles:
-            triangle = triangles.pop(0)
-            a = triangle[0]
-            b = triangle[1]
-            c = triangle[2]
-            if not any((a == x).all() for x in allPoints):
-                allPoints.append(a)
-            if not any((b == x).all() for x in allPoints):
-                allPoints.append(b)
-            if not any((c == x).all() for x in allPoints):
-                allPoints.append(c)
-            if (self._area(triangle) > maxEmptyArea):
-                ab = self._comb2(a,b)
-                bc = self._comb2(b,c)
-                ca = self._comb2(c,a)
-                abc = self._comb3(a,b,c)
-                
-                triangles.append(np.array([a,ab,abc]))
-                triangles.append(np.array([ab,b,abc]))
-                triangles.append(np.array([b,bc,abc]))
-                triangles.append(np.array([bc,c,abc]))
-                triangles.append(np.array([c,ca,abc]))
-                triangles.append(np.array([ca,a,abc]))
+            for face in self._faces:
+                triangles.append(face)
+
+            while triangles:
+                triangle = triangles.pop(0)
+                a = triangle[0]
+                b = triangle[1]
+                c = triangle[2]
+                if not any((a == x).all() for x in allPoints):
+                    allPoints.append(a)
+                if not any((b == x).all() for x in allPoints):
+                    allPoints.append(b)
+                if not any((c == x).all() for x in allPoints):
+                    allPoints.append(c)
+                if (self._area(triangle) > maxEmptyArea):
+                    ab = self._comb2(a,b)
+                    bc = self._comb2(b,c)
+                    ca = self._comb2(c,a)
+                    abc = self._comb3(a,b,c)
+
+                    triangles.append(np.array([a,ab,abc]))
+                    triangles.append(np.array([ab,b,abc]))
+                    triangles.append(np.array([b,bc,abc]))
+                    triangles.append(np.array([bc,c,abc]))
+                    triangles.append(np.array([c,ca,abc]))
+                    triangles.append(np.array([ca,a,abc]))
 
         self.allPoints = np.array(allPoints)
         

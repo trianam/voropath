@@ -116,7 +116,7 @@ class Voronizator:
         return False
                     
     def _triangleIntersectPolyhedrons(self, a, b, c):
-        triangle = polyhedron.Polyhedron(faces=np.array([[a,b,c]]))
+        triangle = polyhedron.Polyhedron(faces=np.array([[a,b,c]]), distributePoints = False)
         for currPolyhedron in self._polyhedrons:
             if currPolyhedron.intersectPolyhedron(triangle):
                 return True
