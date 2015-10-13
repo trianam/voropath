@@ -58,6 +58,10 @@ class Voronizator:
                     b = vorVer[ridge[(i+1)%len(ridge)]]
                     if (not prune) or (not self._segmentIntersectPolyhedrons(a,b)):
                         self._graph.add_edge(tuple(a), tuple(b), weight=np.linalg.norm(a-b))
+        i = 0
+        for node in self._graph.nodes():
+            self._graph.node[node]['index'] = i
+            i = i + 1
 
     def calculateShortestPath(self, start, end, attachMode='near', prune=True):
         if attachMode=='near':
@@ -69,6 +73,11 @@ class Voronizator:
             
         self._pathStart = start
         self._pathEnd = end
+
+        if tuple(start) in self._graph.nodes():
+            self._graph.node[tuple(start)]['index'] = 's'
+        if tuple(end) in self._graph.nodes():
+            self._graph.node[tuple(end)]['index'] = 'e'
 
         self._shortestPath = self._dijkstraPlus(start, end)
         
@@ -94,20 +103,20 @@ class Voronizator:
         if self._pathEnd.size > 0:
             plotter.plot([self._pathEnd[0]], [self._pathEnd[1]], [self._pathEnd[2]], 'ro')
 
-    def plotGraph(self, plotter, vertexes=True, edges=True, labels=False, pathExtremes=False):
+    def plotGraph(self, plotter, vertexes=True, edges=True, labels=False, pathExtremes=False, showOnly=[]):
         if vertexes:
-            i = 0
             for ver in self._graph.nodes():
-                if pathExtremes==True or (ver!=tuple(self._pathStart) and ver!=tuple(self._pathEnd)):
-                    plotter.plot([ver[0]], [ver[1]], [ver[2]], 'og')
-                    if labels:
-                        plotter.text(ver[0], ver[1], ver[2], i, color='red')
-                i = i+1
+                if not showOnly or self._graph.node[ver]['index'] in showOnly:
+                    if pathExtremes==True or (ver!=tuple(self._pathStart) and ver!=tuple(self._pathEnd)):
+                        plotter.plot([ver[0]], [ver[1]], [ver[2]], 'og')
+                        if labels and ('index' in self._graph.node[ver]):
+                                plotter.text(ver[0], ver[1], ver[2], self._graph.node[ver]['index'], color='red')
 
         if edges:
             for edge in self._graph.edges():
-                if pathExtremes==True or (edge[0]!=tuple(self._pathStart) and edge[0]!=tuple(self._pathEnd) and edge[1]!=tuple(self._pathStart) and edge[1]!=tuple(self._pathEnd)):
-                    plotter.plot([edge[0][0], edge[1][0]], [edge[0][1], edge[1][1]], [edge[0][2], edge[1][2]], 'k--')
+                if not showOnly or (self._graph.node[edge[0]]['index'] in showOnly and self._graph.node[edge[1]]['index'] in showOnly):
+                    if pathExtremes==True or (edge[0]!=tuple(self._pathStart) and edge[0]!=tuple(self._pathEnd) and edge[1]!=tuple(self._pathStart) and edge[1]!=tuple(self._pathEnd)):
+                        plotter.plot([edge[0][0], edge[1][0]], [edge[0][1], edge[1][1]], [edge[0][2], edge[1][2]], 'k--')
 
     def _segmentIntersectPolyhedrons(self, a, b):
         for polyhedron in self._polyhedrons:
@@ -199,6 +208,8 @@ class Voronizator:
         while u in prev:
             path[:0] = [u]
             u = prev[u]
-        path[:0] = [u]
+            
+        if path:
+            path[:0] = [u]
 
         return np.array(path)
