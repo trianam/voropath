@@ -41,7 +41,8 @@ voronoi._graph.node[ne]['index'] = 'e'
 voronoi._pathStart = np.array(ns)
 voronoi._pathEnd = np.array(ne)
 
-voronoi._shortestPath = voronoi._dijkstraPlus(voronoi._pathStart, voronoi._pathEnd)
+#voronoi._shortestPath = voronoi._dijkstraPlus(voronoi._pathStart, voronoi._pathEnd)
+voronoi._shortestPath = voronoi._trijkstra(voronoi._pathStart, voronoi._pathEnd)
 
 
 #plot

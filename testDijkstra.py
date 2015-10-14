@@ -68,7 +68,8 @@ voronoi._graph.add_edge(a, b, weight=np.linalg.norm(np.array(a)-np.array(b)))
 voronoi._pathStart = np.array([0.,0.,0.])
 voronoi._pathEnd = np.array([1.,1.,1.])
 
-voronoi._shortestPath = voronoi._dijkstraPlus(voronoi._pathStart, voronoi._pathEnd)
+#voronoi._shortestPath = voronoi._dijkstraPlus(voronoi._pathStart, voronoi._pathEnd)
+voronoi._shortestPath = voronoi._trijkstra(voronoi._pathStart, voronoi._pathEnd)
 
 
 #plot
