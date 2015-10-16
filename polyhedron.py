@@ -89,13 +89,22 @@ class Polyhedron:
             #      }
             # for variables k, v, w, s
 
-            A = np.vstack(
-                (np.vstack(
-                    ((b-a), -triangle[0], -triangle[1], -triangle[2])
-                ).T,np.array([0.,1.,1.,1.]))
-            )
-            B = np.append(-a,1.)
+            # A = np.vstack(
+            #     (np.vstack(
+            #         ((b-a), -triangle[0], -triangle[1], -triangle[2])
+            #     ).T,np.array([0.,1.,1.,1.]))
+            # )
+            # B = np.append(-a,1.)
 
+            diffba = b-a
+            minusa = -a
+            A = np.array([
+                [diffba[0], -triangle[0][0], -triangle[1][0], -triangle[2][0]],
+                [diffba[1], -triangle[0][1], -triangle[1][1], -triangle[2][1]],
+                [diffba[2], -triangle[0][2], -triangle[1][2], -triangle[2][2]],
+                [0.,1.,1.,1.]])
+            B = np.array([minusa[0],minusa[1],minusa[2],1.])
+            
             try:
                 x = np.linalg.solve(A,B)
                 # check if
