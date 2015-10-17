@@ -6,6 +6,7 @@ import networkx as nx
 import numpy.linalg
 import polyhedron
 import smoothener
+import priorityQueue
 
 class Voronizator:
     def __init__(self, sites=np.array([])):
@@ -179,7 +180,7 @@ class Voronizator:
         endTriplet = (end,end,end) #special triplet for termination
         inf = float("inf")
         path = []
-        Q = []
+        Q = priorityQueue.PQueue()
         dist = {}
         prev = {}
         hits = []
@@ -193,34 +194,39 @@ class Voronizator:
                         if not self._triangleIntersectPolyhedrons(np.array(node0), np.array(node1), np.array(node2)):
                             if node0 != start:
                                 dist[triplet] = inf
+                                Q.add(triplet, inf)
                             else:
                                 dist[triplet] = 0
-                            Q[:0] = [triplet]
+                                Q.add(triplet, 0)
                         else:
                             hits[:0] = [triplet]
 
-        Q[:0] = [endTriplet]
         dist[endTriplet] = inf
+        Q.add(endTriplet, inf)
 
-        while Q:
-            Q = sorted(Q, key=lambda el: dist[el])
-            u = Q[0]
-            Q = Q[1:]
+        try:
+            while True:
+                u = Q.pop()
 
-            if u == endTriplet or dist[u] == inf:
-                break
-            
-            for v in filter(lambda tri: u[1] == tri[0] and u[2] == tri[1], Q):
-                tmpDist = dist[u] + self._graph[u[0]][u[1]]['weight']
-                if tmpDist < dist[v]:
-                    dist[v] = tmpDist
-                    prev[v] = u
+                if u == endTriplet or dist[u] == inf:
+                    break
 
-            if u[2] == end:
-                tmpDist = dist[u] + self._graph[u[0]][u[1]]['weight'] + self._graph[u[1]][u[2]]['weight']
-                if tmpDist < dist[endTriplet]:
-                    dist[endTriplet] = tmpDist
-                    prev[endTriplet] = u
+                for v in Q.filterGet(lambda tri: u[1] == tri[0] and u[2] == tri[1]):
+                    tmpDist = dist[u] + self._graph[u[0]][u[1]]['weight']
+                    if tmpDist < dist[v]:
+                        dist[v] = tmpDist
+                        prev[v] = u
+                        Q.add(v, tmpDist)
+
+                if u[2] == end:
+                    tmpDist = dist[u] + self._graph[u[0]][u[1]]['weight'] + self._graph[u[1]][u[2]]['weight']
+                    if tmpDist < dist[endTriplet]:
+                        dist[endTriplet] = tmpDist
+                        prev[endTriplet] = u
+                        Q.add(v, tmpDist)
+        except KeyError:
+            pass
+                        
 
         u = endTriplet
         while u in prev:
