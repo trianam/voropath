@@ -108,8 +108,12 @@ class Voronizator:
         if vertexes:
             for ver in self._graph.nodes():
                 if not showOnly or self._graph.node[ver]['index'] in showOnly:
-                    if pathExtremes==True or (ver!=tuple(self._pathStart) and ver!=tuple(self._pathEnd)):
+                    if (ver!=tuple(self._pathStart) and ver!=tuple(self._pathEnd)):
                         plotter.plot([ver[0]], [ver[1]], [ver[2]], 'og')
+                        if labels and ('index' in self._graph.node[ver]):
+                                plotter.text(ver[0], ver[1], ver[2], self._graph.node[ver]['index'], color='red')
+                    elif pathExtremes==True:
+                        plotter.plot([ver[0]], [ver[1]], [ver[2]], 'or')
                         if labels and ('index' in self._graph.node[ver]):
                                 plotter.text(ver[0], ver[1], ver[2], self._graph.node[ver]['index'], color='red')
 
