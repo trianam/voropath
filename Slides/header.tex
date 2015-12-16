@@ -1,0 +1,178 @@
+%This work is licensed under the Creative Commons
+%Attribution-ShareAlike 4.0 International License. To view a copy of
+%this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or
+%send a letter to Creative Commons, PO Box 1866, Mountain View, CA
+%94042, USA.
+
+%\documentclass[gray,handout, pdftex, 11pt]{beamer}
+%\documentclass[handout, pdftex, 11pt]{beamer}
+
+\documentclass[pdflatex, 11pt]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{calligra}
+\usepackage{lmodern}
+%\usepackage[italian]{babel}
+\usepackage{acronym}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{acronym}
+\usepackage{array}
+\usepackage{tikz}
+\usetikzlibrary{shapes, chains, scopes, shadows, positioning, arrows,
+  decorations.pathmorphing, calc, mindmap, petri}
+
+\newcommand{\bigO}{\ensuremath{\mathcal{O}}}
+
+\def\transW{8mm}
+\def\transH{2mm}
+
+\tikzstyle{obstacle}=[fill=green, draw=black]
+\tikzstyle{convexHull}=[fill=blue!30]
+\tikzstyle{convexHullBord}=[color=black, dash pattern=on 3pt off 3pt]
+\tikzstyle{controlPoly}=[color=black, line width=0.25mm]
+\tikzstyle{spline}=[color=red, line width=0.5mm]
+\tikzstyle{controlVert}=[color=green, draw=black]
+\tikzstyle{textArrow}=[draw=red, line width=0.5mm, ->]
+
+\colorlet{mmcb}{black!70}
+\colorlet{mmc1}{red!80}
+\colorlet{mmc2}{blue!80}
+\colorlet{c1}{green!20}
+\colorlet{c2}{blue!10}
+\colorlet{c3}{yellow!10}
+\colorlet{c4}{red!10}
+\colorlet{drawColor}{black!80}
+\colorlet{commentColor}{green!70!black!90}
+\colorlet{codeBgColor}{yellow!50}
+\colorlet{bashBgColor}{green!50}
+
+\tikzset{onslide/.code args={<#1>#2}{%
+  \only<#1>{\pgfkeysalso{#2}} % \pgfkeysalso doesn't change the path
+}}
+\tikzset{temporal/.code args={<#1>#2#3#4}{%
+  \temporal<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}}{\pgfkeysalso{#4}} % \pgfkeysalso doesn't change the path
+}}
+
+\tikzstyle{alertStar}=[circle, decorate, decoration={zigzag,segment length=3.12mm,amplitude=1mm}, align=center, drop shadow, draw=drawColor, fill=white]
+\tikzstyle{oval}=[ellipse, align=center, drop shadow, draw=drawColor, fill=white]
+\tikzstyle{rect}=[rectangle, rounded corners=2pt, align=center, drop
+shadow, draw=drawColor, fill=white]
+\tikzstyle{arrow}=[->, very thick, >=stealth', draw=black!80]
+\tikzstyle{myMindmap}=[mindmap,
+every node/.style={concept, minimum size=5mm, text width=5mm}, 
+% every child/.style={level distance=10mm, concept color=mmcb}
+level 1/.append style={level distance=10mm,sibling angle=45},
+level 2/.append style={level distance=10mm,sibling angle=45},
+level 3/.append style={level distance=10mm,sibling angle=45}
+]
+\tikzstyle{myPlace} = [place, very thick, draw=drawColor, fill=white, drop shadow]
+\tikzstyle{transExpH} = [transition, very thick, draw=drawColor, fill=white, drop
+shadow, minimum width=\transW, minimum height=\transH]
+\tikzstyle{transExpV} = [transition, very thick, draw=drawColor, fill=white, drop
+shadow, minimum width=\transH, minimum height=\transW]
+\tikzstyle{transDetH} = [transition, very thick, draw=drawColor, fill=black, drop shadow, minimum width=\transW, minimum height=\transH]
+\tikzstyle{transDetV} = [transition, very thick, draw=drawColor, fill=black, drop shadow, minimum width=\transH, minimum height=\transW]
+\tikzstyle{pre}=[<-, very thick, >=stealth', draw=drawColor]
+\tikzstyle{preN}=[<-, very thick, >=o, draw=drawColor]
+\tikzstyle{post}=[->, very thick, >=stealth', draw=drawColor]
+\tikzstyle{highlight}=[draw=red]
+\lstdefinestyle{customPython}{
+   language=Python,
+   % basicstyle=\small\ttfamily\bfseries,
+   basicstyle=\tiny\ttfamily,
+   keywordstyle=\color{blue}\ttfamily,
+   stringstyle=\color{red}\ttfamily,
+   commentstyle=\color{green}\ttfamily,
+   morecomment=[l][\color{magenta}]{\#},
+   % breaklines=false,
+   breaklines=true, breakatwhitespace=true,
+   postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\color{red}\hookrightarrow\space}},
+   frameround=fttt,
+   frame=trBL,
+   backgroundcolor=\color{yellow!20},
+   numbers=left,
+   stepnumber=1,    
+   firstnumber=1,
+   numberfirstline=true,
+   numberstyle=\tiny\color{black!50},
+   xleftmargin=1.75em,
+   framexleftmargin=2.1em,
+   % rulesepcolor=\color{gray},
+   rulecolor=\color{black}
+   % linewidth=8cm,
+}
+
+\lstdefinestyle{customInlinePython}{
+   language=Python,
+   % basicstyle=\small\ttfamily\bfseries,
+   basicstyle=\ttfamily,
+   keywordstyle=\color{blue}\ttfamily,
+   stringstyle=\color{red}\ttfamily,
+   commentstyle=\color{green}\ttfamily,
+   morecomment=[l][\color{magenta}]{\#}
+}
+
+\lstnewenvironment{pblock}[1][]
+{
+  \lstset{
+    style=customPython,
+    #1
+  }
+}{}
+
+\newcommand{\pfile}[2][]{
+  \lstinputlisting[style=customPython, title={\texttt{\detokenize{#2}}}, #1]{#2}
+}
+
+\newcommand{\pp}[2][]{\lstinline[style=customInlinePython,#1]`#2`}
+  %\colorbox{codeBgColor}{
+  %  \lstinline[style=customPython,#1]`#2`
+  %}
+%}
+
+\graphicspath{{img/}}
+\lstset{inputpath=../cSrc/}
+
+\definecolor{links}{HTML}{2A1B81}
+\hypersetup{colorlinks,linkcolor=links,urlcolor=links}
+
+\definecolor{links}{HTML}{2A1B81}
+\hypersetup{colorlinks,linkcolor=,urlcolor=links}
+
+
+\mode<presentation>{
+  %-------------------------1
+  \usetheme{Boadilla}
+  \usecolortheme{beaver}
+  %-------------------------1
+  %-------------------------2
+  %\usetheme{Goettingen}
+  %\usecolortheme{sidebartab}
+  %-------------------------2
+  %\useoutertheme[right]{sidebar}
+  %\usefonttheme{default}
+  \setbeamercovered{transparent}
+  %\setbeameroption{show notes on second screen=right}
+  %\setbeamertemplate{navigation symbols}{}
+  %\setbeamertemplate{footline}{}
+
+  \bibliographystyle{abbrv}  
+  %\renewcommand\bibfont{\scriptsize}
+  \setbeamertemplate{bibliography item}{\textbullet}
+  \setbeamertemplate{itemize item}{\checkmark}
+  % \setbeamertemplate{itemize subitem}{-}
+  \setbeamertemplate{enumerate items}[default]
+  \setbeamertemplate{sections/subsections in toc}[square]
+}
+
+\usebackgroundtemplate
+{
+  \begin{tikzpicture}
+    \node[opacity=0.1] {\includegraphics[]{img/logoUnifi.png}};
+%    \node[opacity=0.04] {\includegraphics[scale=1]{img/logoUnifi.eps}};
+  \end{tikzpicture}
+}
