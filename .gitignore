@@ -13,6 +13,7 @@ __pycache__/
 *.fls
 *.out
 *.toc
+Slides/auto/
 doc/auto/
 doc/*.pdf
 

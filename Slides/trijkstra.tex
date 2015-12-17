@@ -428,12 +428,47 @@ return np.array(path)
 % \end{frame}
 
 \begin{frame}
-  \frametitle{Time complexity (After creation of the original graph)}
+  \frametitle{Time complexity (For original graph creation)}
+  \begin{itemize}
+  \item \alert{Fortune} algorithm run in \alert{$\bigO(n\log n)$}\pause
+  \item if we have $n$ input sites we get \alert{$\bigO(n)$} vertexes
+    of Voronoi areas\pause
+  \item if we assume obstacles with a maximum area\pause
+    \begin{itemize}
+    \item \alert{$\bigO(|Ob|)$} input sites\pause
+    \end{itemize}
+  \end{itemize}
+  \begin{block}{Total}
+    \begin{itemize}
+    \item \alert{$\bigO(|Ob|\log |Ob|)$}\pause
+    \item The number of vertexes of the graph is \alert{$|V_{orig}|=\bigO(|Ob|)$}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Time complexity (For modified graph creation)}
   \begin{itemize}
   \item Suppose that the graph has a maximum degree \alert{$k$}\pause
     \begin{itemize}
     \item each node has maximum $k$ \alert{neighbours}\pause
     \end{itemize}
+  \item Cost for triples \alert{creation}: $|V_{orig}|\cdot k\cdot
+    (k-1)=$\alert{$\bigO(k^2|V_{orig}|)$}\pause
+    \begin{itemize}
+    \item plus for each triple and each obstacle solve a $4\times 4$
+      linear system for the collision check\pause
+    \item cost for creation and check: \alert{$\bigO(|Ob|k^2|V_{orig}|)$}\pause
+    \end{itemize}
+  \end{itemize}
+  \begin{block}{Total}
+    \alert{$\bigO(|Ob|^2k^2)$}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Time complexity (Routing in modified graph)}
+  \begin{itemize}
   \item
     \begin{minipage}[t]{0.8\linewidth}
       Each \alert{node} is the \alert{central} point of $2\cdot
@@ -481,9 +516,7 @@ return np.array(path)
     \item $|E_{mod}|=|V_{mod}|\cdot (k-1)=\bigO(k|V_{mod}|)=$\alert{$\bigO(k^3|V_{orig}|)$}\pause
     \end{itemize}
   \item Cost of \alert{Dijkstra}: $\bigO(|E_{mod}|+|V_{mod}|\log
-    |V_{mod}|)=$\alert{$\bigO(k^3|V_{orig}|+ k^2|V_{orig}|\log(k|V_{orig}|))$}\pause
-  \item Negligible cost for triples \alert{creation}: $|V_{orig}|\cdot k\cdot
-    (k-1)=$\alert{$\bigO(k^2|V_{orig}|)$}
+    |V_{mod}|)=$\alert{$\bigO(k^3|V_{orig}|+ k^2|V_{orig}|\log(k|V_{orig}|))$}
   \end{itemize}
 \end{frame}
 
@@ -505,6 +538,26 @@ return np.array(path)
     \item Total cost: \alert{$\bigO(|V_{orig}|^4)$}
     \end{itemize}
   \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Overall}
+  \begin{block}{Total (if obstacle area is not a function of the
+      number of obstacles)}
+    \alert{$\bigO(k^2|Ob|^2+k^3|Ob|)$}\pause
+  \end{block}
+  \begin{itemize}
+  \item The predominant factor is for checking the triples
+    collisions with obstacles\pause
+    \begin{itemize}
+    \item if $k$ is constant \alert{$\bigO(|Ob|^2)$}\pause
+    \end{itemize}
+  \item But if we focus only on routing (i.e. we construct the graph
+    only once)\pause
+    \begin{itemize}
+    \item if $k$ is constant \alert{$\bigO(|Ob|\log|Ob|)$}
+    \end{itemize}
+  \end{itemize}
 \end{frame}
 
 \begin{frame}
