@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import voronizator
 import polyhedron
 
-voronoi = voronizator.Voronizator()
+voronoi = voronizator.Voronizator(0.1)
 
 maxEmptyArea = 0.1
 poly1 = polyhedron.Polyhedron(a = [0.1,0.1,0.1], b = [0.1,0.9,0.1], c = [0.9,0.1,0.1], d = [0.5,0.5,0.9], maxEmptyArea=maxEmptyArea)

@@ -9,7 +9,7 @@ import smoothener
 import priorityQueue
 
 class Voronizator:
-    def __init__(self, sites=np.array([])):
+    def __init__(self, nodesDistance, sites=np.array([])):
         self._smoothener = smoothener.Smoothener()
         self._sites = sites
         self._shortestPath = np.array([])
@@ -17,10 +17,11 @@ class Voronizator:
         self._polyhedrons = []
         self._pathStart = np.array([])
         self._pathEnd = np.array([])
+        self._nodesDistance = nodesDistance
 
     def setCustomSites(self, sites):
         self._sites = sites
-        
+
     def setRandomSites(self, number, seed=None):
         if seed != None:
             np.random.seed(0)
@@ -48,7 +49,7 @@ class Voronizator:
             sites.extend(polyhedron.allPoints)
 
         self._sites = np.array(sites)
-        
+
     def makeVoroGraph(self, prune=True):
         vor = sp.spatial.Voronoi(self._sites)
         vorVer = vor.vertices
@@ -59,6 +60,9 @@ class Voronizator:
                     b = vorVer[ridge[(i+1)%len(ridge)]]
                     if (not prune) or (not self._segmentIntersectPolyhedrons(a,b)):
                         self._graph.add_edge(tuple(a), tuple(b), weight=np.linalg.norm(a-b))
+
+        self._standardizeGraph()
+
         i = 0
         for node in self._graph.nodes():
             self._graph.node[node]['index'] = i
@@ -71,7 +75,7 @@ class Voronizator:
             self._attachToGraphAll(start, end, prune)
         else:
             self._attachToGraphNear(start, end, prune)
-            
+
         self._pathStart = start
         self._pathEnd = end
 
@@ -81,7 +85,7 @@ class Voronizator:
             self._graph.node[tuple(end)]['index'] = 'e'
 
         self._shortestPath = self._trijkstra(start, end)
-        
+
         # try:
         #     length,path=nx.bidirectional_dijkstra(self._graph, tuple(start), tuple(end))
         # except (nx.NetworkXNoPath, nx.NetworkXError):
@@ -95,7 +99,7 @@ class Voronizator:
     def plotPolyhedrons(self, plotter):
         for poly in self._polyhedrons:
             poly.plot(plotter)
-            
+
     def plotShortestPath(self, plotter):
         if self._shortestPath.size > 0:
             self._smoothener.plot(self._shortestPath, plotter)
@@ -128,14 +132,51 @@ class Voronizator:
             if polyhedron.intersectSegment(a,b):
                 return True
         return False
-                    
+
     def _triangleIntersectPolyhedrons(self, a, b, c):
         triangle = polyhedron.Polyhedron(faces=np.array([[a,b,c]]), distributePoints = False)
         for currPolyhedron in self._polyhedrons:
             if currPolyhedron.intersectPolyhedron(triangle):
                 return True
         return False
+
+    def _standardizeGraph(self):
+        edgePoll = self._graph.edges()
+        while len(edgePoll) > 0:
+            edge = edgePoll.pop()
+            node1 = edge[0]
+            node2 = edge[1]
+            node1A = np.array(node1)
+            node2A = np.array(node2)
+            nodeDiff = node2A - node1A
+            distance = np.linalg.norm(nodeDiff)
+            maxNodesDistance = self._nodesDistance * 1.5
+            minNodesDistance = self._nodesDistance * 0.5
+            
+            if distance > maxNodesDistance:
+                self._graph.remove_edge(node1,node2)
+                newNodesNum = int(round(distance / self._nodesDistance)) -1
+                newNodesDist = distance / (newNodesNum + 1)
+                distRatio = newNodesDist / distance
+                prevNode = node1A
+                for i in range(1,newNodesNum+1):
+                    currNode = node1A + (i *distRatio * nodeDiff)
+                    self._graph.add_edge(tuple(prevNode), tuple(currNode))
+                    prevNode = currNode
+                self._graph.add_edge(tuple(prevNode), node2)
+
+            elif distance < minNodesDistance:
+                newNode = tuple(0.5*node1A + 0.5*node2A) 
+                self._graph.add_node(newNode)
+                for neighbor in self._graph.neighbors_iter(node1):
+                    self._graph.add_edge(neighbor, newNode)
+                for neighbor in self._graph.neighbors_iter(node2):
+                    self._graph.add_edge(newNode, neighbor)
+
+                self._graph.remove_node(node1)
+                self._graph.remove_node(node2)
                     
+
     def _attachToGraphNear(self, start, end, prune):
         firstS = True
         firstE = True
@@ -154,7 +195,7 @@ class Voronizator:
                     if currDist < minDistS:
                         minAttachS = node
                         minDistS = currDist
-                    
+
             if (not prune) or (not self._segmentIntersectPolyhedrons(end,np.array(node))):
                 if firstE:
                     minAttachE = node
@@ -230,17 +271,15 @@ class Voronizator:
                         Q.add(v, tmpDist)
         except KeyError:
             pass
-                        
+
 
         u = endTriplet
         while u in prev:
             u = prev[u]
             path[:0] = [u[1]]
-            
+
         if path:
             path[len(path):] = [end]
             path[:0] = [start]
 
         return np.array(path)
-
-    
