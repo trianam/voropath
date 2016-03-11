@@ -168,14 +168,21 @@ class Voronizator:
             elif distance < minNodesDistance:
                 newNode = tuple(0.5*node1A + 0.5*node2A) 
                 self._graph.add_node(newNode)
-                for neighbor in self._graph.neighbors_iter(node1):
+                
+                for neighbor in self._graph.neighbors(node1):
                     self._graph.add_edge(neighbor, newNode)
-                for neighbor in self._graph.neighbors_iter(node2):
+                for neighbor in self._graph.neighbors(node2):
                     self._graph.add_edge(newNode, neighbor)
 
-                self._graph.remove_node(node1)
-                self._graph.remove_node(node2)
-                    
+                try:
+                    self._graph.remove_node(node1)
+                    self._graph.remove_node(node2)
+                except nx.exception.NetworkXError:
+                    pass
+                
+                edgePoll = list(filter(lambda edge: edge[0]!=node1 and edge[1]!=node1 and edge[0]!=node2 and edge[1]!=node2, edgePoll))
+                edgePoll = edgePoll + self._graph.edges(newNode)
+
 
     def _attachToGraphNear(self, start, end, prune):
         firstS = True
