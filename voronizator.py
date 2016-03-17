@@ -125,16 +125,21 @@ class Voronizator:
 
     def _segmentIntersectPolyhedrons(self, a, b):
         for polyhedron in self._polyhedrons:
-            if polyhedron.intersectSegment(a,b):
+            if polyhedron.intersectSegment(a,b)[0]:
                 return True
         return False
                     
     def _triangleIntersectPolyhedrons(self, a, b, c):
         triangle = polyhedron.Polyhedron(faces=np.array([[a,b,c]]), distributePoints = False)
+        intersect = False
+        result = np.array([])
         for currPolyhedron in self._polyhedrons:
-            if currPolyhedron.intersectPolyhedron(triangle):
-                return True
-        return False
+            currIntersect,currResult = currPolyhedron.intersectPathTriple(triangle)
+            if currIntersect and (not intersect or (currResult[1] > result[1])):
+                intersect = True
+                result = currResult
+
+        return (intersect, result)
                     
     def _attachToGraphNear(self, start, end, prune):
         firstS = True
@@ -188,6 +193,7 @@ class Voronizator:
         dist = {}
         prev = {}
         hits = []
+        hitsRes = {}
 
         #create triplets
         for node0 in self._graph.nodes():
@@ -195,16 +201,37 @@ class Voronizator:
                 for node2 in filter(lambda node: node!=node0, self._graph.neighbors(node1)):
                     triplet = (node0,node1,node2)
                     if not triplet[::-1] in hits:
-                        if not self._triangleIntersectPolyhedrons(np.array(node0), np.array(node1), np.array(node2)):
-                            if node0 != start:
-                                dist[triplet] = inf
-                                Q.add(triplet, inf)
-                            else:
-                                dist[triplet] = 0
-                                Q.add(triplet, 0)
+                        intersect,result = self._triangleIntersectPolyhedrons(np.array(node0), np.array(node1), np.array(node2))
+                        if not intersect:
+                            d = inf if (node0 != start) else 0
+                            dist[triplet] = d
+                            Q.add(triplet, d)
                         else:
                             hits[:0] = [triplet]
+                            hitsRes[triplet] = result[1]
 
+        #modify collided triplets
+        for hit in hits:
+            a = hit[0]
+            v = hit[1]
+            b = hit[2]
+            alpha = hitsRes[hit]
+            a1 = (1-alpha)*a + alpha*v + 0*b
+            b1 = 0*a + alpha*v + (1-alpha)*b
+
+            self._graph.remove_edge(a,v)
+            self._graph.remove_edge(v,b)
+            self._graph.add_edge(a,a1)
+            self._graph.add_edge(a1,v)
+            self._graph.add_edge(v,b1)
+            self._graph.add_edge(b1,b)
+
+            for triplet in [(a,a1,v),(a1,v,b1),(v,b1,b),(b,b1,v),(b1,v,a1),(v,a1,a)]:
+                d = inf if (triplet[0] != start) else 0
+                dist[triplet] = d
+                Q.add(triplet, d)
+
+        #add special ending triple
         dist[endTriplet] = inf
         Q.add(endTriplet, inf)
 

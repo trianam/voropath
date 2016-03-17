@@ -112,25 +112,46 @@ class Polyhedron:
                 #          s >= 0
                 #          w+s <= 1
                 if (x[0] >= 0.) and (x[0] <= 1.) and (x[1] >= 0.) and (x[2] >= 0.) and (x[1]+x[2] <= 1.):
-                    return True
+                    return (True, x)
             except np.linalg.linalg.LinAlgError:
                 pass
 
-        return False
+        return (False,np.array([]))
 
-    def intersectPolyhedron(self, polyhedron):
-        """alert, not case of one polyhedron inside other"""
-        for otherFace in polyhedron._faces:
-            for myFace in self._faces:
-                if (
-                        self.intersectSegment(otherFace[0],otherFace[1]) or
-                        self.intersectSegment(otherFace[1],otherFace[2]) or
-                        self.intersectSegment(otherFace[2],otherFace[0]) or
-                        polyhedron.intersectSegment(myFace[0], myFace[1]) or
-                        polyhedron.intersectSegment(myFace[1], myFace[2]) or
-                        polyhedron.intersectSegment(myFace[2], myFace[0])):
-                    return True
-        return False
+    # def intersectPolyhedron(self, polyhedron):
+    #     """alert, not case of one polyhedron inside other"""
+    #     for otherFace in polyhedron._faces:
+    #         for myFace in self._faces:
+    #             if (
+    #                     self.intersectSegment(otherFace[0],otherFace[1]) or
+    #                     self.intersectSegment(otherFace[1],otherFace[2]) or
+    #                     self.intersectSegment(otherFace[2],otherFace[0]) or
+    #                     polyhedron.intersectSegment(myFace[0], myFace[1]) or
+    #                     polyhedron.intersectSegment(myFace[1], myFace[2]) or
+    #                     polyhedron.intersectSegment(myFace[2], myFace[0])):
+    #                 return True
+    #     return False
+                
+    def intersectPathTriple(self, triple):
+        """alert, not case of one polyhedron inside other, and only
+        check if the segments of self intersect the triple."""
+        intersect = False
+        result = np.array([])
+        for myFace in self._faces:
+            intersect1, result1 = triple.intersectSegment(myFace[0], myFace[1])
+            intersect2, result2 = triple.intersectSegment(myFace[1], myFace[2])
+            intersect3, result3 = triple.intersectSegment(myFace[2], myFace[0])
+            if intersect1:
+                intersect = True
+                result = result1
+            if intersect2 and (not intersect or (result2[1] > result[1])):
+                intersect = True
+                result = result2
+            if intersect3 and (not intersect or (result3[1] > result[1])):
+                intersect = True
+                result = result3
+
+        return intersect,result
                 
                     
     def plot(self, plotter):
