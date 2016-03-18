@@ -215,16 +215,37 @@ class Voronizator:
             a = hit[0]
             v = hit[1]
             b = hit[2]
-            alpha = hitsRes[hit]
-            a1 = (1-alpha)*a + alpha*v + 0*b
-            b1 = 0*a + alpha*v + (1-alpha)*b
+            aa = np.array(a)
+            va = np.array(v)
+            ba = np.array(b)
 
+            alpha = hitsRes[hit]
+            a1a = (1.-alpha)*aa + alpha*va + 0.*ba
+            b1a = 0.*aa + alpha*va + (1.-alpha)*ba
+            a1 = tuple(a1a)
+            b1 = tuple(b1a)
+            
             self._graph.remove_edge(a,v)
             self._graph.remove_edge(v,b)
-            self._graph.add_edge(a,a1)
-            self._graph.add_edge(a1,v)
-            self._graph.add_edge(v,b1)
-            self._graph.add_edge(b1,b)
+            self._graph.add_edge(a,a1, weight=np.linalg.norm(aa-a1a))
+            self._graph.add_edge(a1,v, weight=np.linalg.norm(a1a-va))
+            self._graph.add_edge(v,b1, weight=np.linalg.norm(va-b1a))
+            self._graph.add_edge(b1,b, weight=np.linalg.norm(b1a-ba))
+
+            for triplet in Q.filterGet(lambda tri: tri[0] == v or tri[2] == v):
+                if triplet[0] == v and triplet[1] == a:
+                    newTriplet = (a1, a, triplet[2])
+                elif triplet[0] == v and triplet[1] == b:
+                    newTriplet = (b1, b, triplet[2])
+                elif triplet[2] == v and triplet[1] == a:
+                    newTriplet = (triplet[0], a, a1)
+                elif triplet[2] == v and triplet[1] == b:
+                    newTriplet = (triplet[0], b, b1)
+
+                Q.remove(triplet)
+                d = inf if (newTriplet[0] != start) else 0
+                dist[newTriplet] = d
+                Q.add(newTriplet, d)
 
             for triplet in [(a,a1,v),(a1,v,b1),(v,b1,b),(b,b1,v),(b1,v,a1),(v,a1,a)]:
                 d = inf if (triplet[0] != start) else 0
@@ -238,9 +259,9 @@ class Voronizator:
         try:
             while True:
                 u = Q.pop()
-
                 if u == endTriplet or dist[u] == inf:
                     break
+
 
                 for v in Q.filterGet(lambda tri: u[1] == tri[0] and u[2] == tri[1]):
                     tmpDist = dist[u] + self._graph[u[0]][u[1]]['weight']
