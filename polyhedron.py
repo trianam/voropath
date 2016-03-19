@@ -35,38 +35,10 @@ class Polyhedron:
         else:
             self._invisible = False
             
-        allPoints = []
         if (not 'distributePoints' in pars) or (pars['distributePoints'] == True):
-            triangles = []
-
-            for face in self._faces:
-                triangles.append(face)
-
-            while triangles:
-                triangle = triangles.pop(0)
-                a = triangle[0]
-                b = triangle[1]
-                c = triangle[2]
-                if not any((a == x).all() for x in allPoints):
-                    allPoints.append(a)
-                if not any((b == x).all() for x in allPoints):
-                    allPoints.append(b)
-                if not any((c == x).all() for x in allPoints):
-                    allPoints.append(c)
-                if (self._area(triangle) > maxEmptyArea):
-                    ab = self._comb2(a,b)
-                    bc = self._comb2(b,c)
-                    ca = self._comb2(c,a)
-                    abc = self._comb3(a,b,c)
-
-                    triangles.append(np.array([a,ab,abc]))
-                    triangles.append(np.array([ab,b,abc]))
-                    triangles.append(np.array([b,bc,abc]))
-                    triangles.append(np.array([bc,c,abc]))
-                    triangles.append(np.array([c,ca,abc]))
-                    triangles.append(np.array([ca,a,abc]))
-
-        self.allPoints = np.array(allPoints)
+            self.distributePoints(maxEmptyArea)
+        else:
+            self.allPoints = np.array([])
         
     def _area(self, triangle):
         a = np.linalg.norm(triangle[1]-triangle[0])
@@ -77,9 +49,44 @@ class Polyhedron:
 
     _comb2 = lambda self,a,b: 0.5*a + 0.5*b
     _comb3 = lambda self,a,b,c: 0.33*a + 0.33*b + 0.33*c
-        
+
+    def distributePoints(self, maxEmptyArea):
+        allPoints = []
+        triangles = []
+
+        for face in self._faces:
+            triangles.append(face)
+
+        while triangles:
+            triangle = triangles.pop(0)
+            a = triangle[0]
+            b = triangle[1]
+            c = triangle[2]
+            if not any((a == x).all() for x in allPoints):
+                allPoints.append(a)
+            if not any((b == x).all() for x in allPoints):
+                allPoints.append(b)
+            if not any((c == x).all() for x in allPoints):
+                allPoints.append(c)
+            if (self._area(triangle) > maxEmptyArea):
+                ab = self._comb2(a,b)
+                bc = self._comb2(b,c)
+                ca = self._comb2(c,a)
+                abc = self._comb3(a,b,c)
+
+                triangles.append(np.array([a,ab,abc]))
+                triangles.append(np.array([ab,b,abc]))
+                triangles.append(np.array([b,bc,abc]))
+                triangles.append(np.array([bc,c,abc]))
+                triangles.append(np.array([c,ca,abc]))
+                triangles.append(np.array([ca,a,abc]))
+
+        self.allPoints = np.array(allPoints)
+
+    
     def plotAllPoints(self, plotter):
-        plotter.plot(self.allPoints[:,0], self.allPoints[:,1], self.allPoints[:,2], 'ob')
+        if self.allPoints.size > 0:
+            plotter.plot(self.allPoints[:,0], self.allPoints[:,1], self.allPoints[:,2], 'ob')
 
     def intersectSegment(self, a, b):
         for triangle in self._faces:
@@ -118,19 +125,19 @@ class Polyhedron:
 
         return (False,np.array([]))
 
-    # def intersectPolyhedron(self, polyhedron):
-    #     """alert, not case of one polyhedron inside other"""
-    #     for otherFace in polyhedron._faces:
-    #         for myFace in self._faces:
-    #             if (
-    #                     self.intersectSegment(otherFace[0],otherFace[1]) or
-    #                     self.intersectSegment(otherFace[1],otherFace[2]) or
-    #                     self.intersectSegment(otherFace[2],otherFace[0]) or
-    #                     polyhedron.intersectSegment(myFace[0], myFace[1]) or
-    #                     polyhedron.intersectSegment(myFace[1], myFace[2]) or
-    #                     polyhedron.intersectSegment(myFace[2], myFace[0])):
-    #                 return True
-    #     return False
+    def intersectPolyhedron(self, polyhedron):
+        """alert, not case of one polyhedron inside other"""
+        for otherFace in polyhedron._faces:
+            for myFace in self._faces:
+                if (
+                        self.intersectSegment(otherFace[0],otherFace[1])[0] or
+                        self.intersectSegment(otherFace[1],otherFace[2])[0] or
+                        self.intersectSegment(otherFace[2],otherFace[0])[0] or
+                        polyhedron.intersectSegment(myFace[0], myFace[1])[0] or
+                        polyhedron.intersectSegment(myFace[1], myFace[2])[0] or
+                        polyhedron.intersectSegment(myFace[2], myFace[0])[0]):
+                    return True
+        return False
                 
     def intersectPathTriple(self, triple):
         """alert, not case of one polyhedron inside other, and only

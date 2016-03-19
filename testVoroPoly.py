@@ -9,9 +9,9 @@ import polyhedron
 voronoi = voronizator.Voronizator()
 
 maxEmptyArea = 0.1
-poly1 = polyhedron.Polyhedron(a = [0.1,0.1,0.1], b = [0.1,0.9,0.1], c = [0.9,0.1,0.1], d = [0.5,0.5,0.9], maxEmptyArea=maxEmptyArea)
-poly2 = polyhedron.Polyhedron(a = [-0.5,0.1,0.1], b = [-0.5,0.9,0.1], c = [-0.9,0.5,0.1], d = [-0.5,0.5,1.5], maxEmptyArea=maxEmptyArea)
-poly3 = polyhedron.Polyhedron(a = [0.5,1.,0.5], b = [0.7,0.5,0.5], c = [0.7,0.7,1.], d = [0.9,0.7,0.5], maxEmptyArea=maxEmptyArea)
+poly1 = polyhedron.Polyhedron(a = np.array([0.1,0.1,0.1]), b = np.array([0.1,0.9,0.1]), c = np.array([0.9,0.1,0.1]), d = np.array([0.5,0.5,0.9]), maxEmptyArea=maxEmptyArea)
+poly2 = polyhedron.Polyhedron(a = np.array([-0.5,0.1,0.1]), b = np.array([-0.5,0.9,0.1]), c = np.array([-0.9,0.5,0.1]), d = np.array([-0.5,0.5,1.5]), maxEmptyArea=maxEmptyArea)
+poly3 = polyhedron.Polyhedron(a = np.array([0.5,1.,0.5]), b = np.array([0.7,0.5,0.5]), c = np.array([0.7,0.7,1.]), d = np.array([0.9,0.7,0.5]), maxEmptyArea=maxEmptyArea)
 
 
 fig = plt.figure()

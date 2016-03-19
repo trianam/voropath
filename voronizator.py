@@ -211,7 +211,8 @@ class Voronizator:
                             hitsRes[triplet] = result[1]
 
         #modify collided triplets
-        for hit in hits:
+        while len(hits) > 0:
+            hit = hits.pop()
             a = hit[0]
             v = hit[1]
             b = hit[2]
@@ -232,6 +233,7 @@ class Voronizator:
             self._graph.add_edge(v,b1, weight=np.linalg.norm(va-b1a))
             self._graph.add_edge(b1,b, weight=np.linalg.norm(b1a-ba))
 
+            #check if other triplets are affected
             for triplet in Q.filterGet(lambda tri: tri[0] == v or tri[2] == v):
                 if triplet[0] == v and triplet[1] == a:
                     newTriplet = (a1, a, triplet[2])
@@ -247,6 +249,28 @@ class Voronizator:
                 dist[newTriplet] = d
                 Q.add(newTriplet, d)
 
+            #check if other hits are affected (and if they are still hits)
+            for tripletIndex,triplet in enumerate(hits):
+                if triplet[0] == v and triplet[1] == a:
+                    newTriplet = (a1, a, triplet[2])
+                elif triplet[0] == v and triplet[1] == b:
+                    newTriplet = (b1, b, triplet[2])
+                elif triplet[2] == v and triplet[1] == a:
+                    newTriplet = (triplet[0], a, a1)
+                elif triplet[2] == v and triplet[1] == b:
+                    newTriplet = (triplet[0], b, b1)
+
+                intersect,result = self._triangleIntersectPolyhedrons(np.array(newTriplet[0]), np.array(newTriplet[1]), np.array(newTriplet[2]))
+                if not intersect:
+                    d = inf if (node0 != start) else 0
+                    dist[newTriplet] = d
+                    Q.add(newTriplet, d)
+                    hits.pop(tripletIndex)
+                else:
+                    hits[tripletIndex] = newTriplet
+                    hitsRes[newTriplet] = result[1]
+
+                
             for triplet in [(a,a1,v),(a1,v,b1),(v,b1,b),(b,b1,v),(b1,v,a1),(v,a1,a)]:
                 d = inf if (triplet[0] != start) else 0
                 dist[triplet] = d
