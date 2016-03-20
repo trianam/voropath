@@ -5,9 +5,10 @@ import numpy as np
 import random
 import math
 import pickle
+import voronizator
 import polyhedron
 
-if len(sys.argv) >= 13 or len(sys.argv) <= 15:
+if len(sys.argv) >= 13 and len(sys.argv) <= 14:
     i = 1
     minX = float(sys.argv[i])
     i += 1
@@ -35,11 +36,8 @@ if len(sys.argv) >= 13 or len(sys.argv) <= 15:
     i += 1
     numObstacles = int(sys.argv[i])
     i += 1
-    distributePoints = bool(eval(sys.argv[i]))
+    maxEmptyArea = float(sys.argv[i])
     i += 1
-    if distributePoints:
-        maxEmptyArea = float(sys.argv[i])
-        i += 1
     fileName = sys.argv[i]
     
 else:
@@ -57,14 +55,11 @@ else:
         maxRadius = float(input('Insert max obstacle radius: '))
     avoidCollisions = bool(eval(input('Do you want to avoid collisions between obstacles? (True/False): ')))
     numObstacles = int(input('Insert obstacles number: '))
-    distributePoints = bool(eval(input('Do you want to distribute points in obstacles surfaces? (True/False): ')))
-    if distributePoints:
-        maxEmptyArea = float(input('Insert max empty area: '))
+    maxEmptyArea = float(input('Insert max empty area (for points distribution in obstacles): '))
+        
     fileName = input('Insert file name: ')
 
-if not distributePoints:
-    maxEmptyArea = 0.
-    
+voronoi = voronizator.Voronizator()
 obstacles = []
 
 for ob in range(numObstacles):
@@ -84,7 +79,7 @@ for ob in range(numObstacles):
                 radius*math.cos(elev)*math.sin(azim),
                 radius*math.sin(elev)])]
 
-        newObstacle = polyhedron.Polyhedron(a = points[0], b = points[1], c = points[2], d = points[3], distributePoints = distributePoints, maxEmptyArea = maxEmptyArea)
+        newObstacle = polyhedron.Polyhedron(a = points[0], b = points[1], c = points[2], d = points[3], distributePoints = True, maxEmptyArea = maxEmptyArea)
 
         ok = True
         if avoidCollisions:
@@ -94,12 +89,19 @@ for ob in range(numObstacles):
                     break
 
         if ok:
-            obstacles[:0] = [newObstacle]
+            voronoi.addPolyhedron(newObstacle)
+            if avoidCollisions:
+                obstacles[:0] = [newObstacle]
             
     print(' done')
-            
+
+print('Set sites for Voronoi')
+voronoi.setPolyhedronsSites()
+print('Make pruned voronoi Graph')
+voronoi.makeVoroGraph()
+
 record = {}
-record['obstacles'] = obstacles
+record['voronoi'] = voronoi
 record['minX'] = minX
 record['minY'] = minY
 record['minZ'] = minZ

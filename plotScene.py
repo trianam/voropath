@@ -13,11 +13,14 @@ if len(sys.argv) >= 2:
 
     fig = plt.figure()
     ax = Axes3D(fig)
+
+    voronoi = record['voronoi']
     
-    for obstacle in record['obstacles']:
-        print(obstacle._faces)
-        obstacle.plot(ax)
-        obstacle.plotAllPoints(ax)
+    voronoi.plotSites(ax)
+    voronoi.plotPolyhedrons(ax)
+    #voronoi.plotGraph(ax, edges=False, labels=True)
+    #voronoi.plotGraph(ax, pathExtremes=True)
+    #voronoi.plotGraph(ax)
 
     ax.set_xlabel('x')
     ax.set_ylabel('y')

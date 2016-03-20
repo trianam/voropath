@@ -64,7 +64,9 @@ class Voronizator:
             self._graph.node[node]['index'] = i
             i = i + 1
 
-    def calculateShortestPath(self, start, end, attachMode='near', prune=True):
+    def calculateShortestPath(self, start, end, attachMode='near', prune=True, verbose=False):
+        if verbose:
+            print('Attach start and end points')
         if attachMode=='near':
             self._attachToGraphNear(start, end, prune)
         elif attachMode=='all':
@@ -80,7 +82,7 @@ class Voronizator:
         if tuple(end) in self._graph.nodes():
             self._graph.node[tuple(end)]['index'] = 'e'
 
-        self._shortestPath = self._trijkstra(start, end)
+        self._shortestPath = self._trijkstra(start, end, verbose)
         
         # try:
         #     length,path=nx.bidirectional_dijkstra(self._graph, tuple(start), tuple(end))
@@ -183,7 +185,7 @@ class Voronizator:
             if (not prune) or (not self._segmentIntersectPolyhedrons(end,np.array(node))):
                 self._graph.add_edge(tuple(end), node, weight=np.linalg.norm(end-np.array(node)))
 
-    def _trijkstra(self, startA, endA):
+    def _trijkstra(self, startA, endA, verbose):
         start = tuple(startA)
         end = tuple(endA)
         endTriplet = (end,end,end) #special triplet for termination
@@ -196,9 +198,14 @@ class Voronizator:
         hitsRes = {}
 
         #create triplets
+        if verbose:
+            print('Create triplets ', end='')
         for node0 in self._graph.nodes():
             for node1 in self._graph.neighbors(node0):
                 for node2 in filter(lambda node: node!=node0, self._graph.neighbors(node1)):
+                    if verbose:
+                        print('.', end='')
+                        
                     triplet = (node0,node1,node2)
                     if not triplet[::-1] in hits:
                         intersect,result = self._triangleIntersectPolyhedrons(np.array(node0), np.array(node1), np.array(node2))
@@ -211,7 +218,12 @@ class Voronizator:
                             hitsRes[triplet] = result[1]
 
         #modify collided triplets
+        if verbose:
+            print('')        
+            print('Modify collided triplets ', end='')
         while len(hits) > 0:
+            if verbose:
+                print('.', end='')
             hit = hits.pop()
             a = hit[0]
             v = hit[1]
@@ -280,8 +292,12 @@ class Voronizator:
         dist[endTriplet] = inf
         Q.add(endTriplet, inf)
 
+        if verbose:
+            print('Dijkstra algorithm', end='')
         try:
             while True:
+                if verbose:
+                    print('.',end='')
                 u = Q.pop()
                 if u == endTriplet or dist[u] == inf:
                     break
@@ -302,8 +318,11 @@ class Voronizator:
                         Q.add(v, tmpDist)
         except KeyError:
             pass
-                        
 
+        if verbose:
+            print('')
+            print('Construct path')
+        
         u = endTriplet
         while u in prev:
             u = prev[u]
