@@ -64,9 +64,9 @@ class Voronizator:
             self._graph.node[node]['index'] = i
             i = i + 1
 
-    def calculateShortestPath(self, start, end, attachMode='near', prune=True, verbose=False):
+    def calculateShortestPath(self, start, end, attachMode='near', prune=True, verbose=False, debug=False):
         if verbose:
-            print('Attach start and end points')
+            print('Attach start and end points', flush=True)
         if attachMode=='near':
             self._attachToGraphNear(start, end, prune)
         elif attachMode=='all':
@@ -82,7 +82,7 @@ class Voronizator:
         if tuple(end) in self._graph.nodes():
             self._graph.node[tuple(end)]['index'] = 'e'
 
-        self._shortestPath = self._trijkstra(start, end, verbose)
+        self._shortestPath = self._trijkstra(start, end, verbose, debug)
         
         # try:
         #     length,path=nx.bidirectional_dijkstra(self._graph, tuple(start), tuple(end))
@@ -185,7 +185,7 @@ class Voronizator:
             if (not prune) or (not self._segmentIntersectPolyhedrons(end,np.array(node))):
                 self._graph.add_edge(tuple(end), node, weight=np.linalg.norm(end-np.array(node)))
 
-    def _trijkstra(self, startA, endA, verbose):
+    def _trijkstra(self, startA, endA, verbose, debug):
         start = tuple(startA)
         end = tuple(endA)
         endTriplet = (end,end,end) #special triplet for termination
@@ -199,12 +199,16 @@ class Voronizator:
 
         #create triplets
         if verbose:
-            print('Create triplets ', end='')
+            print('Create triplets ', end='', flush=True)
+
+        if debug:
+            hits_file = open("hits.txt","w")
+
         for node0 in self._graph.nodes():
             for node1 in self._graph.neighbors(node0):
                 for node2 in filter(lambda node: node!=node0, self._graph.neighbors(node1)):
                     if verbose:
-                        print('.', end='')
+                        print('.', end='', flush=True)
                         
                     triplet = (node0,node1,node2)
                     if not triplet[::-1] in hits:
@@ -214,17 +218,32 @@ class Voronizator:
                             dist[triplet] = d
                             Q.add(triplet, d)
                         else:
+                            if debug:
+                                hits_file.write(str(triplet)+"\n")
                             hits[:0] = [triplet]
                             hitsRes[triplet] = result[1]
 
+        if debug:
+            hits_file.close()
         #modify collided triplets
         if verbose:
-            print('')        
-            print('Modify collided triplets ', end='')
+            print('', flush=True)        
+            print('Modify collided triplets ', end='', flush=True)
+
+        if debug:
+            affectedT_file = open("affectedT.txt","w")
+            unaffectedT_file = open("unaffectedT.txt","w")
+            affunaffected_file = open("affunaffected.txt","w")
+            affected_file = open("affected.txt","w")
+            unaffected_file = open("unaffected.txt","w")
+            hitsC_file = open("hitsC.txt","w")
+            
         while len(hits) > 0:
             if verbose:
-                print('.', end='')
+                print('.', end='', flush=True)
             hit = hits.pop()
+            if debug:
+                hitsC_file.write(str(hit)+'\n')
             a = hit[0]
             v = hit[1]
             b = hit[2]
@@ -237,9 +256,13 @@ class Voronizator:
             b1a = 0.*aa + alpha*va + (1.-alpha)*ba
             a1 = tuple(a1a)
             b1 = tuple(b1a)
-            
-            self._graph.remove_edge(a,v)
-            self._graph.remove_edge(v,b)
+
+            #TODO: check why sometimes launch the exception
+            try:
+                self._graph.remove_edge(a,v)
+                self._graph.remove_edge(v,b)
+            except nx.exception.NetworkXError:
+                pass
             self._graph.add_edge(a,a1, weight=np.linalg.norm(aa-a1a))
             self._graph.add_edge(a1,v, weight=np.linalg.norm(a1a-va))
             self._graph.add_edge(v,b1, weight=np.linalg.norm(va-b1a))
@@ -247,40 +270,40 @@ class Voronizator:
 
             #check if other triplets are affected
             for triplet in Q.filterGet(lambda tri: tri[0] == v or tri[2] == v):
-                if triplet[0] == v and triplet[1] == a:
-                    newTriplet = (a1, a, triplet[2])
-                elif triplet[0] == v and triplet[1] == b:
-                    newTriplet = (b1, b, triplet[2])
-                elif triplet[2] == v and triplet[1] == a:
-                    newTriplet = (triplet[0], a, a1)
-                elif triplet[2] == v and triplet[1] == b:
-                    newTriplet = (triplet[0], b, b1)
+                affected, newTriplet = self._modifyAffected(triplet, a, v, b, a1, b1)
 
-                Q.remove(triplet)
-                d = inf if (newTriplet[0] != start) else 0
-                dist[newTriplet] = d
-                Q.add(newTriplet, d)
+                if affected:
+                    if debug:
+                        affectedT_file.write('a,v,b:'+str(a)+', '+str(v)+', '+str(b)+' - '+str(triplet)+' -> '+str(newTriplet)+'\n')
+                    Q.remove(triplet)
+                    d = inf if (newTriplet[0] != start) else 0
+                    dist[newTriplet] = d
+                    Q.add(newTriplet, d)
+                else:
+                    if debug:
+                        unaffectedT_file.write('a,v,b:'+str(a)+', '+str(v)+', '+str(b)+' - '+str(triplet)+' -> '+str(newTriplet)+'\n')
 
             #check if other hits are affected (and if they are still hits)
             for tripletIndex,triplet in enumerate(hits):
-                if triplet[0] == v and triplet[1] == a:
-                    newTriplet = (a1, a, triplet[2])
-                elif triplet[0] == v and triplet[1] == b:
-                    newTriplet = (b1, b, triplet[2])
-                elif triplet[2] == v and triplet[1] == a:
-                    newTriplet = (triplet[0], a, a1)
-                elif triplet[2] == v and triplet[1] == b:
-                    newTriplet = (triplet[0], b, b1)
-
-                intersect,result = self._triangleIntersectPolyhedrons(np.array(newTriplet[0]), np.array(newTriplet[1]), np.array(newTriplet[2]))
-                if not intersect:
-                    d = inf if (node0 != start) else 0
-                    dist[newTriplet] = d
-                    Q.add(newTriplet, d)
-                    hits.pop(tripletIndex)
+                affected, newTriplet = self._modifyAffected(triplet, a, v, b, a1, b1)
+                if debug:
+                    affunaffected_file.write('a,v,b:'+str(a)+', '+str(v)+', '+str(b)+' - '+str(triplet)+' -> '+str(newTriplet)+'\n')
+                
+                if affected:
+                    if debug:
+                        affected_file.write('a,v,b:'+str(a)+', '+str(v)+', '+str(b)+' - '+str(triplet)+' -> '+str(newTriplet)+'\n')
+                    intersect,result = self._triangleIntersectPolyhedrons(np.array(newTriplet[0]), np.array(newTriplet[1]), np.array(newTriplet[2]))
+                    if not intersect:
+                        d = inf if (node0 != start) else 0
+                        dist[newTriplet] = d
+                        Q.add(newTriplet, d)
+                        hits.pop(tripletIndex)
+                    else:
+                        hits[tripletIndex] = newTriplet
+                        hitsRes[newTriplet] = result[1]
                 else:
-                    hits[tripletIndex] = newTriplet
-                    hitsRes[newTriplet] = result[1]
+                    if debug:
+                        unaffected_file.write('a,v,b:'+str(a)+', '+str(v)+', '+str(b)+' - '+str(triplet)+' -> '+str(newTriplet)+'\n')
 
                 
             for triplet in [(a,a1,v),(a1,v,b1),(v,b1,b),(b,b1,v),(b1,v,a1),(v,a1,a)]:
@@ -288,16 +311,25 @@ class Voronizator:
                 dist[triplet] = d
                 Q.add(triplet, d)
 
+        if debug:
+            affectedT_file.close()
+            unaffectedT_file.close()
+            affunaffected_file.close()
+            affected_file.close()
+            unaffected_file.close()
+            hitsC_file.close()
+        
         #add special ending triple
         dist[endTriplet] = inf
         Q.add(endTriplet, inf)
 
         if verbose:
-            print('Dijkstra algorithm', end='')
+            print('', flush=True)
+            print('Dijkstra algorithm', end='', flush=True)
         try:
             while True:
                 if verbose:
-                    print('.',end='')
+                    print('.',end='', flush=True)
                 u = Q.pop()
                 if u == endTriplet or dist[u] == inf:
                     break
@@ -320,8 +352,8 @@ class Voronizator:
             pass
 
         if verbose:
-            print('')
-            print('Construct path')
+            print('', flush=True)
+            print('Construct path', flush=True)
         
         u = endTriplet
         while u in prev:
@@ -333,5 +365,36 @@ class Voronizator:
             path[:0] = [start]
 
         return np.array(path)
+
+    def _modifyAffected(self, triplet, a, v, b, a1, b1):
+        if triplet[1] == v and triplet[0] == a:
+            newTriplet = (a1, v, triplet[2])
+            affected = True
+        elif triplet[1] == v and triplet[0] == b:
+            newTriplet = (b1, v, triplet[2])
+            affected = True
+        elif triplet[1] == v and triplet[2] == a:
+            newTriplet = (triplet[0], v, a1)
+            affected = True
+        elif triplet[1] == v and triplet[2] == b:
+            newTriplet = (triplet[0], v, b1)
+            affected = True
+        elif triplet[0] == v and triplet[1] == a:
+            newTriplet = (a1, a, triplet[2])
+            affected = True
+        elif triplet[0] == v and triplet[1] == b:
+            newTriplet = (b1, b, triplet[2])
+            affected = True
+        elif triplet[2] == v and triplet[1] == a:
+            newTriplet = (triplet[0], a, a1)
+            affected = True
+        elif triplet[2] == v and triplet[1] == b:
+            newTriplet = (triplet[0], b, b1)
+            affected = True
+        else:
+            affected = False
+            newTriplet = ()
+
+        return (affected, newTriplet)
 
     

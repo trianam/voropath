@@ -7,8 +7,8 @@ from mpl_toolkits.mplot3d import  Axes3D
 import matplotlib.pyplot as plt
 
 if len(sys.argv) >= 2:
-    if len(sys.argv) == 5 or len(sys.argv) == 6:
-        i = 1
+    if len(sys.argv) == 4:
+        i = 2
         startPoint = np.array(tuple(eval(sys.argv[i])),dtype=float)
         i += 1
         endPoint = np.array(tuple(eval(sys.argv[i])),dtype=float)
@@ -24,10 +24,10 @@ if len(sys.argv) >= 2:
 
     voronoi = record['voronoi']
     
-    print('Calculate shortest path')
-    voronoi.calculateShortestPath(startPoint, endPoint, 'near', verbose=True)
+    print('Calculate shortest path', flush=True)
+    voronoi.calculateShortestPath(startPoint, endPoint, 'near', verbose=True, debug=False)
 
-    print('Plot')
+    print('Plot', flush=True)
     #voronoi.plotSites(ax)
     voronoi.plotPolyhedrons(ax)
     #voronoi.plotGraph(ax, edges=False, labels=True)

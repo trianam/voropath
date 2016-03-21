@@ -63,10 +63,10 @@ voronoi = voronizator.Voronizator()
 obstacles = []
 
 for ob in range(numObstacles):
-    print('Creating obstacle {} '.format(ob+1), end='')
+    print('Creating obstacle {} '.format(ob+1), end='', flush=True)
     ok = False
     while not ok:
-        print('.', end='')
+        print('.', end='', flush=True)
         if not fixedRadius:
             radius = random.uniform(minRadius,maxRadius)
         center = np.array([random.uniform(minX+radius,maxX-radius), random.uniform(minY+radius,maxY-radius), random.uniform(minZ+radius,maxZ-radius)])
@@ -93,11 +93,11 @@ for ob in range(numObstacles):
             if avoidCollisions:
                 obstacles[:0] = [newObstacle]
             
-    print(' done')
+    print(' done', flush=True)
 
-print('Set sites for Voronoi')
+print('Set sites for Voronoi', flush=True)
 voronoi.setPolyhedronsSites()
-print('Make pruned voronoi Graph')
+print('Make pruned voronoi Graph', flush=True)
 voronoi.makeVoroGraph()
 
 record = {}
