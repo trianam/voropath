@@ -23,7 +23,7 @@ if len(sys.argv) >= 2:
     ax = Axes3D(fig)
 
     voronoi = record['voronoi']
-    
+
     print('Calculate shortest path', flush=True)
     voronoi.calculateShortestPath(startPoint, endPoint, 'near', verbose=True, debug=False)
 
@@ -32,7 +32,7 @@ if len(sys.argv) >= 2:
     voronoi.plotPolyhedrons(ax)
     #voronoi.plotGraph(ax, edges=False, labels=True)
     #voronoi.plotGraph(ax, pathExtremes=True)
-    #voronoi.plotGraph(ax)
+    voronoi.plotGraph(ax)
     voronoi.plotShortestPath(ax)
 
     ax.set_xlabel('x')
@@ -42,7 +42,7 @@ if len(sys.argv) >= 2:
     ax.set_xlim3d(record['minX'], record['maxX'])
     ax.set_ylim3d(record['minY'], record['maxY'])
     ax.set_zlim3d(record['minZ'], record['maxZ'])
-    
+
     plt.show()
 
 else:

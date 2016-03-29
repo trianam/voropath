@@ -6,7 +6,7 @@ import networkx as nx
 import numpy.linalg
 import polyhedron
 import smoothener
-import priorityQueue
+import uuid
 
 class Voronizator:
     def __init__(self, sites=np.array([])):
@@ -17,10 +17,12 @@ class Voronizator:
         self._polyhedrons = []
         self._pathStart = np.array([])
         self._pathEnd = np.array([])
+        self._startId = uuid.uuid4()
+        self._endId = uuid.uuid4()
 
     def setCustomSites(self, sites):
         self._sites = sites
-        
+
     def setRandomSites(self, number, seed=None):
         if seed != None:
             np.random.seed(0)
@@ -48,8 +50,9 @@ class Voronizator:
             sites.extend(polyhedron.allPoints)
 
         self._sites = np.array(sites)
-        
+
     def makeVoroGraph(self, prune=True):
+        ids = {}
         vor = sp.spatial.Voronoi(self._sites)
         vorVer = vor.vertices
         for ridge in vor.ridge_vertices:
@@ -58,11 +61,21 @@ class Voronizator:
                     a = vorVer[ridge[i]]
                     b = vorVer[ridge[(i+1)%len(ridge)]]
                     if (not prune) or (not self._segmentIntersectPolyhedrons(a,b)):
-                        self._graph.add_edge(tuple(a), tuple(b), weight=np.linalg.norm(a-b))
-        i = 0
-        for node in self._graph.nodes():
-            self._graph.node[node]['index'] = i
-            i = i + 1
+                        if tuple(a) in ids.keys():
+                            idA = ids[tuple(a)]
+                        else:
+                            idA = uuid.uuid4()
+                            self._graph.add_node(idA, coord=a)
+                            ids[tuple(a)] = idA
+
+                        if tuple(b) in ids.keys():
+                            idB = ids[tuple(b)]
+                        else:
+                            idB = uuid.uuid4()
+                            self._graph.add_node(idB, coord=b)
+                            ids[tuple(b)] = idB
+
+                        self._graph.add_edge(idA, idB, weight=np.linalg.norm(a-b))
 
     def calculateShortestPath(self, start, end, attachMode='near', prune=True, verbose=False, debug=False):
         if verbose:
@@ -73,22 +86,11 @@ class Voronizator:
             self._attachToGraphAll(start, end, prune)
         else:
             self._attachToGraphNear(start, end, prune)
-            
+
         self._pathStart = start
         self._pathEnd = end
 
-        if tuple(start) in self._graph.nodes():
-            self._graph.node[tuple(start)]['index'] = 's'
-        if tuple(end) in self._graph.nodes():
-            self._graph.node[tuple(end)]['index'] = 'e'
-
-        self._shortestPath = self._trijkstra(start, end, verbose, debug)
-        
-        # try:
-        #     length,path=nx.bidirectional_dijkstra(self._graph, tuple(start), tuple(end))
-        # except (nx.NetworkXNoPath, nx.NetworkXError):
-        #     path = []
-        #self._shortestPath = np.array(path)
+        self._shortestPath = self._trijkstra(verbose, debug)
 
     def plotSites(self, plotter):
         if self._sites.size > 0:
@@ -97,7 +99,7 @@ class Voronizator:
     def plotPolyhedrons(self, plotter):
         for poly in self._polyhedrons:
             poly.plot(plotter)
-            
+
     def plotShortestPath(self, plotter):
         if self._shortestPath.size > 0:
             self._smoothener.plot(self._shortestPath, plotter)
@@ -109,28 +111,28 @@ class Voronizator:
     def plotGraph(self, plotter, vertexes=True, edges=True, labels=False, pathExtremes=False, showOnly=[]):
         if vertexes:
             for ver in self._graph.nodes():
-                if not showOnly or self._graph.node[ver]['index'] in showOnly:
-                    if (ver!=tuple(self._pathStart) and ver!=tuple(self._pathEnd)):
-                        plotter.plot([ver[0]], [ver[1]], [ver[2]], 'og')
-                        if labels and ('index' in self._graph.node[ver]):
-                                plotter.text(ver[0], ver[1], ver[2], self._graph.node[ver]['index'], color='red')
+                if not showOnly or ver in showOnly:
+                    if (ver != self._startId and ver != self._endId):
+                        plotter.plot([self._graph.node[ver]['coord'][0]], [self._graph.node[ver]['coord'][1]], [self._graph.node[ver]['coord'][2]], 'og')
+                        if labels:
+                                plotter.text(self._graph.node[ver]['coord'][0], self._graph.node[ver]['coord'][1], self._graph.node[ver]['coord'][2], ver, color='red')
                     elif pathExtremes==True:
-                        plotter.plot([ver[0]], [ver[1]], [ver[2]], 'or')
-                        if labels and ('index' in self._graph.node[ver]):
-                                plotter.text(ver[0], ver[1], ver[2], self._graph.node[ver]['index'], color='red')
+                        plotter.plot([self._graph.node[ver]['coord'][0]], [self._graph.node[ver]['coord'][1]], [self._graph.node[ver]['coord'][2]], 'or')
+                        if labels:
+                                plotter.text(self._graph.node[ver]['coord'][0], self._graph.node[ver]['coord'][1], self._graph.node[ver]['coord'][2], ver, color='red')
 
         if edges:
             for edge in self._graph.edges():
-                if not showOnly or (self._graph.node[edge[0]]['index'] in showOnly and self._graph.node[edge[1]]['index'] in showOnly):
-                    if pathExtremes==True or (edge[0]!=tuple(self._pathStart) and edge[0]!=tuple(self._pathEnd) and edge[1]!=tuple(self._pathStart) and edge[1]!=tuple(self._pathEnd)):
-                        plotter.plot([edge[0][0], edge[1][0]], [edge[0][1], edge[1][1]], [edge[0][2], edge[1][2]], 'k--')
+                if not showOnly or (edge[0] in showOnly and edge[1] in showOnly):
+                    if pathExtremes==True or (edge[0] != self._startId and edge[0] != self._endId and edge[1] != self._startId and edge[1] != self._endId):
+                        plotter.plot([self._graph.node[edge[0]]['coord'][0], self._graph.node[edge[1]]['coord'][0]], [self._graph.node[edge[0]]['coord'][1], self._graph.node[edge[1]]['coord'][1]], [self._graph.node[edge[0]]['coord'][2], self._graph.node[edge[1]]['coord'][2]], 'k--')
 
     def _segmentIntersectPolyhedrons(self, a, b):
         for polyhedron in self._polyhedrons:
             if polyhedron.intersectSegment(a,b)[0]:
                 return True
         return False
-                    
+
     def _triangleIntersectPolyhedrons(self, a, b, c):
         triangle = polyhedron.Polyhedron(faces=np.array([[a,b,c]]), distributePoints = False)
         intersect = False
@@ -142,7 +144,7 @@ class Voronizator:
                 result = currResult
 
         return (intersect, result)
-                    
+
     def _attachToGraphNear(self, start, end, prune):
         firstS = True
         firstE = True
@@ -150,52 +152,47 @@ class Voronizator:
         minAttachE = None
         minDistS = 0.
         minDistE = 0.
-        for node in self._graph.nodes():
-            if (not prune) or (not self._segmentIntersectPolyhedrons(start,np.array(node))):
+        for node,nodeAttr in self._graph.node.items():
+            if (not prune) or (not self._segmentIntersectPolyhedrons(start,nodeAttr['coord'])):
                 if firstS:
                     minAttachS = node
-                    minDistS = np.linalg.norm(start-np.array(node))
+                    minDistS = np.linalg.norm(start - nodeAttr['coord'])
                     firstS = False
                 else:
-                    currDist = np.linalg.norm(start-np.array(node))
+                    currDist = np.linalg.norm(start - nodeAttr['coord'])
                     if currDist < minDistS:
                         minAttachS = node
                         minDistS = currDist
-                    
-            if (not prune) or (not self._segmentIntersectPolyhedrons(end,np.array(node))):
+
+            if (not prune) or (not self._segmentIntersectPolyhedrons(end, nodeAttr['coord'])):
                 if firstE:
                     minAttachE = node
-                    minDistE = np.linalg.norm(end-np.array(node))
+                    minDistE = np.linalg.norm(end - nodeAttr['coord'])
                     firstE = False
                 else:
-                    currDist = np.linalg.norm(end-np.array(node))
+                    currDist = np.linalg.norm(end - nodeAttr['coord'])
                     if currDist < minDistE:
                         minAttachE = node
                         minDistE = currDist
 
         if minAttachS != None:
-            self._graph.add_edge(tuple(start), minAttachS, weight=minDistS)
+            self._graph.add_node(self._startId, coord=start)
+            self._graph.add_edge(self._startId, minAttachS, weight=minDistS)
         if minAttachE != None:
-            self._graph.add_edge(tuple(end), minAttachE, weight=minDistE)
+            self._graph.add_node(self._endId, coord=end)
+            self._graph.add_edge(self._endId, minAttachE, weight=minDistE)
 
     def _attachToGraphAll(self, start, end, prune):
-        for node in self._graph.nodes():
-            if (not prune) or (not self._segmentIntersectPolyhedrons(start,np.array(node))):
-                self._graph.add_edge(tuple(start), node, weight=np.linalg.norm(start-np.array(node)))
-            if (not prune) or (not self._segmentIntersectPolyhedrons(end,np.array(node))):
-                self._graph.add_edge(tuple(end), node, weight=np.linalg.norm(end-np.array(node)))
+        for node,nodeAttr in self._graph.node.items():
+            if (not prune) or (not self._segmentIntersectPolyhedrons(start, nodeAttr['coord'])):
+                self._graph.add_node(self._startId, coord=start)
+                self._graph.add_edge(self._startId, node, weight=np.linalg.norm(start - nodeAttr['coord']))
+            if (not prune) or (not self._segmentIntersectPolyhedrons(end, nodeAttr['coord'])):
+                self._graph.add_node(self._endId, coord=end)
+                self._graph.add_edge(self._endId, node, weight=np.linalg.norm(end - nodeAttr['coord']))
 
-    def _trijkstra(self, startA, endA, verbose, debug):
-        start = tuple(startA)
-        end = tuple(endA)
-        endTriplet = (end,end,end) #special triplet for termination
-        inf = float("inf")
-        path = []
-        Q = priorityQueue.PQueue()
-        dist = {}
-        prev = {}
-        hits = []
-        hitsRes = {}
+    def _trijkstra(self, verbose, debug):
+        tGraph = nx.DiGraph()
 
         #create triplets
         if verbose:
@@ -209,192 +206,130 @@ class Voronizator:
                 for node2 in filter(lambda node: node!=node0, self._graph.neighbors(node1)):
                     if verbose:
                         print('.', end='', flush=True)
-                        
-                    triplet = (node0,node1,node2)
-                    if not triplet[::-1] in hits:
-                        intersect,result = self._triangleIntersectPolyhedrons(np.array(node0), np.array(node1), np.array(node2))
+
+                    tripletId = uuid.uuid4()
+                    tGraph.add_node(tripletId, triplet = [node0,node1,node2], hit=False)
+
+                    if not tGraph.node[tripletId]['triplet'][::-1] in [n for n,attr in tGraph.node.items() if attr['hit'] == True]:
+                        intersect,result = self._triangleIntersectPolyhedrons(self._graph.node[node0]['coord'], self._graph.node[node1]['coord'], self._graph.node[node2]['coord'])
                         if not intersect:
-                            d = inf if (node0 != start) else 0
-                            dist[triplet] = d
-                            Q.add(triplet, d)
+                            tGraph.node[tripletId]['hit'] = False
+                            #Q.add(triplet, d)
                         else:
                             if debug:
-                                hits_file.write(str(triplet)+"\n")
-                            hits[:0] = [triplet]
-                            hitsRes[triplet] = result[1]
+                                hits_file.write(str(tGraph.node[tripletId]['triplet'])+"\n")
+                            tGraph.node[tripletId]['hit'] = True
+                            tGraph.node[tripletId]['hitRes'] = result[1]
+                    else:
+                        if debug:
+                            hits_file.write(str(tGraph.node[tripletId]['triplet'])+"\n")
+                        tGraph.node[tripletId]['hit'] = True
+                        tGraph.node[tripletId]['hitRes'] = [n for n,attr in tGraph.node.items() if attr['triplet'][::-1] == tGraph.node[tripletId]['triplet']][0]
+
+        if verbose:
+            print('', flush=True)
 
         if debug:
             hits_file.close()
-        #modify collided triplets
+
+        #create edges between triples
         if verbose:
-            print('', flush=True)        
-            print('Modify collided triplets ', end='', flush=True)
+            print('Create edges between triples', flush=True)
 
-        if debug:
-            affectedT_file = open("affectedT.txt","w")
-            unaffectedT_file = open("unaffectedT.txt","w")
-            affunaffected_file = open("affunaffected.txt","w")
-            affected_file = open("affected.txt","w")
-            unaffected_file = open("unaffected.txt","w")
-            hitsC_file = open("hitsC.txt","w")
-            
-        while len(hits) > 0:
-            if verbose:
-                print('.', end='', flush=True)
-            hit = hits.pop()
-            if debug:
-                hitsC_file.write(str(hit)+'\n')
-            a = hit[0]
-            v = hit[1]
-            b = hit[2]
-            aa = np.array(a)
-            va = np.array(v)
-            ba = np.array(b)
+        for triple in tGraph.nodes():
+            tGraph.add_edges_from([(triple,n,{'weight':self._graph.edge[tGraph.node[triple]['triplet'][0]][tGraph.node[n]['triplet'][0]]['weight']}) for n in tGraph.nodes() if tGraph.node[n]['triplet'][0] == tGraph.node[triple]['triplet'][1] and tGraph.node[n]['triplet'][1] == tGraph.node[triple]['triplet'][2]])
 
-            alpha = hitsRes[hit]
-            a1a = (1.-alpha)*aa + alpha*va + 0.*ba
-            b1a = 0.*aa + alpha*va + (1.-alpha)*ba
-            a1 = tuple(a1a)
-            b1 = tuple(b1a)
-
-            #TODO: check why sometimes launch the exception
-            try:
-                self._graph.remove_edge(a,v)
-                self._graph.remove_edge(v,b)
-            except nx.exception.NetworkXError:
-                pass
-            self._graph.add_edge(a,a1, weight=np.linalg.norm(aa-a1a))
-            self._graph.add_edge(a1,v, weight=np.linalg.norm(a1a-va))
-            self._graph.add_edge(v,b1, weight=np.linalg.norm(va-b1a))
-            self._graph.add_edge(b1,b, weight=np.linalg.norm(b1a-ba))
-
-            #check if other triplets are affected
-            for triplet in Q.filterGet(lambda tri: tri[0] == v or tri[2] == v):
-                affected, newTriplet = self._modifyAffected(triplet, a, v, b, a1, b1)
-
-                if affected:
-                    if debug:
-                        affectedT_file.write('a,v,b:'+str(a)+', '+str(v)+', '+str(b)+' - '+str(triplet)+' -> '+str(newTriplet)+'\n')
-                    Q.remove(triplet)
-                    d = inf if (newTriplet[0] != start) else 0
-                    dist[newTriplet] = d
-                    Q.add(newTriplet, d)
-                else:
-                    if debug:
-                        unaffectedT_file.write('a,v,b:'+str(a)+', '+str(v)+', '+str(b)+' - '+str(triplet)+' -> '+str(newTriplet)+'\n')
-
-            #check if other hits are affected (and if they are still hits)
-            for tripletIndex,triplet in enumerate(hits):
-                affected, newTriplet = self._modifyAffected(triplet, a, v, b, a1, b1)
-                if debug:
-                    affunaffected_file.write('a,v,b:'+str(a)+', '+str(v)+', '+str(b)+' - '+str(triplet)+' -> '+str(newTriplet)+'\n')
-                
-                if affected:
-                    if debug:
-                        affected_file.write('a,v,b:'+str(a)+', '+str(v)+', '+str(b)+' - '+str(triplet)+' -> '+str(newTriplet)+'\n')
-                    intersect,result = self._triangleIntersectPolyhedrons(np.array(newTriplet[0]), np.array(newTriplet[1]), np.array(newTriplet[2]))
-                    if not intersect:
-                        d = inf if (node0 != start) else 0
-                        dist[newTriplet] = d
-                        Q.add(newTriplet, d)
-                        hits.pop(tripletIndex)
-                    else:
-                        hits[tripletIndex] = newTriplet
-                        hitsRes[newTriplet] = result[1]
-                else:
-                    if debug:
-                        unaffected_file.write('a,v,b:'+str(a)+', '+str(v)+', '+str(b)+' - '+str(triplet)+' -> '+str(newTriplet)+'\n')
-
-                
-            for triplet in [(a,a1,v),(a1,v,b1),(v,b1,b),(b,b1,v),(b1,v,a1),(v,a1,a)]:
-                d = inf if (triplet[0] != start) else 0
-                dist[triplet] = d
-                Q.add(triplet, d)
-
-        if debug:
-            affectedT_file.close()
-            unaffectedT_file.close()
-            affunaffected_file.close()
-            affected_file.close()
-            unaffected_file.close()
-            hitsC_file.close()
-        
-        #add special ending triple
-        dist[endTriplet] = inf
-        Q.add(endTriplet, inf)
-
+        #attach special starting and ending triplet
         if verbose:
-            print('', flush=True)
-            print('Dijkstra algorithm', end='', flush=True)
+            print('Create starting and ending triplets', flush=True)
+
+        startTriplet = uuid.uuid4()
+        endTriplet = uuid.uuid4()
+        tGraph.add_node(startTriplet, triplet = [self._startId,self._startId,self._startId], hit = False)
+        tGraph.add_node(endTriplet, triplet = [self._endId,self._endId,self._endId], hit = False)
+        tGraph.add_edges_from([(startTriplet, n, {'weight':0.}) for n in tGraph.nodes() if tGraph.node[n]['triplet'][0] == self._startId])
+        tGraph.add_edges_from([(n, endTriplet, {'weight':0.}) for n in tGraph.nodes() if tGraph.node[n]['triplet'][2] == self._endId])
         try:
-            while True:
-                if verbose:
-                    print('.',end='', flush=True)
-                u = Q.pop()
-                if u == endTriplet or dist[u] == inf:
-                    break
-
-
-                for v in Q.filterGet(lambda tri: u[1] == tri[0] and u[2] == tri[1]):
-                    tmpDist = dist[u] + self._graph[u[0]][u[1]]['weight']
-                    if tmpDist < dist[v]:
-                        dist[v] = tmpDist
-                        prev[v] = u
-                        Q.add(v, tmpDist)
-
-                if u[2] == end:
-                    tmpDist = dist[u] + self._graph[u[0]][u[1]]['weight'] + self._graph[u[1]][u[2]]['weight']
-                    if tmpDist < dist[endTriplet]:
-                        dist[endTriplet] = tmpDist
-                        prev[endTriplet] = u
-                        Q.add(v, tmpDist)
-        except KeyError:
-            pass
-
-        if verbose:
-            print('', flush=True)
-            print('Construct path', flush=True)
-        
-        u = endTriplet
-        while u in prev:
-            u = prev[u]
-            path[:0] = [u[1]]
-            
-        if path:
-            path[len(path):] = [end]
-            path[:0] = [start]
+            if verbose:
+                print('Dijkstra algorithm', end='', flush=True)
+            length,triPath=nx.bidirectional_dijkstra(tGraph, startTriplet, endTriplet)
+            if verbose:
+                print('', flush=True)
+                print('Construct path', flush=True)
+            path = [self._graph.node[tGraph.node[n]['triplet'][1]]['coord'] for n in triPath]
+        except (nx.NetworkXNoPath, nx.NetworkXError):
+            path = []
 
         return np.array(path)
 
-    def _modifyAffected(self, triplet, a, v, b, a1, b1):
-        if triplet[1] == v and triplet[0] == a:
-            newTriplet = (a1, v, triplet[2])
-            affected = True
-        elif triplet[1] == v and triplet[0] == b:
-            newTriplet = (b1, v, triplet[2])
-            affected = True
-        elif triplet[1] == v and triplet[2] == a:
-            newTriplet = (triplet[0], v, a1)
-            affected = True
-        elif triplet[1] == v and triplet[2] == b:
-            newTriplet = (triplet[0], v, b1)
-            affected = True
-        elif triplet[0] == v and triplet[1] == a:
-            newTriplet = (a1, a, triplet[2])
-            affected = True
-        elif triplet[0] == v and triplet[1] == b:
-            newTriplet = (b1, b, triplet[2])
-            affected = True
-        elif triplet[2] == v and triplet[1] == a:
-            newTriplet = (triplet[0], a, a1)
-            affected = True
-        elif triplet[2] == v and triplet[1] == b:
-            newTriplet = (triplet[0], b, b1)
-            affected = True
-        else:
-            affected = False
-            newTriplet = ()
+        #TODO: aggiustare il path quando collide (roba sotto); cambiare plotter b-splines
 
-        return (affected, newTriplet)
 
-    
+
+        #modify collided triplets
+        if verbose:
+            print('', flush=True)
+            print('Modify collided triplets ', end='', flush=True)
+
+        if debug:
+            hitsC_file = open("hitsC.txt","w")
+
+        while len([n for n,attr in tGraph.node.items() if attr['hit'] == True]) > 0:
+            if verbose:
+                print('.', end='', flush=True)
+            hit = [n for n,attr in tGraph.node.items() if attr['hit'] == True][0]
+            if debug:
+                hitsC_file.write(str(tGraph.node[hit]['triplet'])+'\n')
+            a = tGraph.node[hit]['triplet'][0]
+            v = tGraph.node[hit]['triplet'][1]
+            b = tGraph.node[hit]['triplet'][2]
+
+            alpha = tGraph.node[hit]['hitRes']
+
+            a1 = uuid.uuid4()
+            b1 = uuid.uuid4()
+
+            #adjust graph
+            self._graph.add_node(a1, coord = (1.-alpha)*self._graph.node[a]['coord'] + alpha*self._graph.node[v]['coord'] + 0.*self._graph.node[b]['coord'])
+            self._graph.add_node(b1, coord = 0.*self._graph.node[a]['coord'] + alpha*self._graph.node[v]['coord'] + (1.-alpha)*self._graph.node[b]['coord'])
+
+            self._graph.remove_edge(a,v)
+            self._graph.remove_edge(v,b)
+
+            self._graph.add_edge(a,a1, weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[a1]['coord']))
+            self._graph.add_edge(a1,v, weight=np.linalg.norm(self._graph.node[a1]['coord'] - self._graph.node[v]['coord']))
+            self._graph.add_edge(v,b1, weight=np.linalg.norm(self._graph.node[v]['coord'] - self._graph.node[b1]['coord']))
+            self._graph.add_edge(b1,b, weight=np.linalg.norm(self._graph.node[b1]['coord'] - self._graph.node[b]['coord']))
+
+            #adjust triple graph
+            newTriplet1 = uuid.uuid4()
+            newTriplet2 = uuid.uuid4()
+            newTriplet3 = uuid.uuid4()
+
+            tGraph.add_node(newTriplet1, triplet = [a,a1,v], hit = False)
+            tGraph.add_node(newTriplet2, triplet = [a1,v,b1], hit = False)
+            tGraph.add_node(newTriplet3, triplet = [v,b1,b], hit = False)
+
+            tGraph.add_edge(newTriplet1, newTriplet2, weight = self._graph.edge[a][a1]['weight'])
+            tGraph.add_edge(newTriplet2, newTriplet3, weight = self._graph.edge[a1][v]['weight'])
+
+            for pred in tGraph.predecessors(hit):
+                tGraph.node[pred]['triplet'][2] = a1
+                tGraph.add_edge(pred, newTriplet1, weight = self._graph.edge[tGraph.node[pred]['triplet'][0]][a]['weight'])
+                if tGraph.node[pred]['hit']:
+                    intersect,result = self._triangleIntersectPolyhedrons(self._graph.node[tGraph.node[pred]['triplet'][0]]['coord'], self._graph.node[tGraph.node[pred]['triplet'][1]]['coord'], self._graph.node[tGraph.node[pred]['triplet'][2]]['coord'])
+                    if not intersect:
+                        tGraph.node[pred]['hit'] = False
+
+            for succ in tGraph.successors(hit):
+                tGraph.node[succ]['triplet'][0] = b1
+                tGraph.add_edge(newTriplet3, succ, weight = self._graph.edge[v][tGraph.node[succ]['triplet'][0]]['weight'])
+                if tGraph.node[succ]['hit']:
+                    intersect,result = self._triangleIntersectPolyhedrons(self._graph.node[tGraph.node[succ]['triplet'][0]]['coord'], self._graph.node[tGraph.node[succ]['triplet'][1]]['coord'], self._graph.node[tGraph.node[succ]['triplet'][2]]['coord'])
+                    if not intersect:
+                        tGraph.node[succ]['hit'] = False
+
+            tGraph.remove_node(hit)
+
+        if debug:
+            hitsC_file.close
