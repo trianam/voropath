@@ -108,9 +108,9 @@ class Voronizator:
             t = range(len(self._shortestPath))
             ipl_t = np.linspace(0.0, len(self._shortestPath) - 1, 100)
             #TODO: find a better way to substitute 100 above
-            x_tup = sp.interpolate.splrep(t, x, k=4)
-            y_tup = sp.interpolate.splrep(t, y, k=4)
-            z_tup = sp.interpolate.splrep(t, z, k=4)
+            x_tup = sp.interpolate.splrep(t, x, k=3)
+            y_tup = sp.interpolate.splrep(t, y, k=3)
+            z_tup = sp.interpolate.splrep(t, z, k=3)
 
             x_list = list(x_tup)
             xl = x.tolist()
@@ -261,13 +261,19 @@ class Voronizator:
 
         #create edges between triples
         if verbose:
-            print('Create edges between triples', flush=True)
+            print('Create edges between triples', end='', flush=True)
 
         for triple in tGraph.nodes():
-            tGraph.add_edges_from([(triple,n,{'weight':self._graph.edge[tGraph.node[triple]['triplet'][0]][tGraph.node[n]['triplet'][0]]['weight']}) for n in tGraph.nodes() if tGraph.node[n]['triplet'][0] == tGraph.node[triple]['triplet'][1] and tGraph.node[n]['triplet'][1] == tGraph.node[triple]['triplet'][2]])
+            #tGraph.add_edges_from([(triple,n,{'weight':self._graph.edge[tGraph.node[triple]['triplet'][0]][tGraph.node[n]['triplet'][0]]['weight']}) for n in tGraph.nodes() if tGraph.node[n]['triplet'][0] == tGraph.node[triple]['triplet'][1] and tGraph.node[n]['triplet'][1] == tGraph.node[triple]['triplet'][2]])
+            for n in tGraph.nodes():
+                if tGraph.node[n]['triplet'][0] == tGraph.node[triple]['triplet'][1] and tGraph.node[n]['triplet'][1] == tGraph.node[triple]['triplet'][2]:
+                    if verbose:
+                        print('.', end='', flush=True)
+                    tGraph.add_edge(triple, n, {'weight':self._graph.edge[tGraph.node[triple]['triplet'][0]][tGraph.node[n]['triplet'][0]]['weight']})
 
         #attach special starting and ending triplet
         if verbose:
+            print('', flush=True)
             print('Create starting and ending triplets', flush=True)
 
         startTriplet = uuid.uuid4()
@@ -279,19 +285,58 @@ class Voronizator:
         try:
             if verbose:
                 print('Dijkstra algorithm', end='', flush=True)
+
             length,triPath=nx.bidirectional_dijkstra(tGraph, startTriplet, endTriplet)
+
             if verbose:
                 print('', flush=True)
-                print('Construct path', flush=True)
-            path = [self._graph.node[tGraph.node[n]['triplet'][1]]['coord'] for n in triPath]
+                print('Adjust hits and construct path', flush=True)
+
+            path = []
+            for i,t in [(i,t) for i,t in enumerate(triPath)]:
+                if tGraph.node[t]['hit']:
+                    a = tGraph.node[t]['triplet'][0]
+                    v = tGraph.node[t]['triplet'][1]
+                    b = tGraph.node[t]['triplet'][2]
+
+                    alpha = tGraph.node[t]['hitRes']
+
+                    a1 = uuid.uuid4()
+                    b1 = uuid.uuid4()
+
+                    #adjust graph
+                    self._graph.add_node(a1, coord = (1.-alpha)*self._graph.node[a]['coord'] + alpha*self._graph.node[v]['coord'] + 0.*self._graph.node[b]['coord'])
+                    self._graph.add_node(b1, coord = 0.*self._graph.node[a]['coord'] + alpha*self._graph.node[v]['coord'] + (1.-alpha)*self._graph.node[b]['coord'])
+
+                    self._graph.remove_edge(a,v)
+                    self._graph.remove_edge(v,b)
+
+                    self._graph.add_edge(a,a1, weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[a1]['coord']))
+                    self._graph.add_edge(a1,v, weight=np.linalg.norm(self._graph.node[a1]['coord'] - self._graph.node[v]['coord']))
+                    self._graph.add_edge(v,b1, weight=np.linalg.norm(self._graph.node[v]['coord'] - self._graph.node[b1]['coord']))
+                    self._graph.add_edge(b1,b, weight=np.linalg.norm(self._graph.node[b1]['coord'] - self._graph.node[b]['coord']))
+
+                    #check if next triple still collides
+                    if i < len(triPath)-1:
+                        if tGraph.node[triPath[i+1]]['hit']:
+                            intersect,result = self._triangleIntersectPolyhedrons(self._graph.node[b1]['coord'], self._graph.node[tGraph.node[triPath[i+1]]['triplet'][1]]['coord'], self._graph.node[tGraph.node[triPath[i+1]]['triplet'][2]]['coord'])
+                            if not intersect:
+                                tGraph.node[triPath[i+1]]['hit'] = False
+
+                    path.append(self._graph.node[a1]['coord'])
+                    path.append(self._graph.node[v]['coord'])
+                    path.append(self._graph.node[b1]['coord'])
+
+                else:
+                    path.append(self._graph.node[tGraph.node[t]['triplet'][1]]['coord'])
+
+            #path = [self._graph.node[tGraph.node[n]['triplet'][1]]['coord'] for n in triPath]
         except (nx.NetworkXNoPath, nx.NetworkXError):
             path = []
 
         return np.array(path)
 
-        #TODO: adjust when path collides (see below)
-
-
+        #TODO: check if things below are usefull
 
         #modify collided triplets
         if verbose:
