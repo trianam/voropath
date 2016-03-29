@@ -2,15 +2,14 @@ import numpy as np
 import numpy.linalg
 import scipy as sp
 import scipy.spatial
+import scipy.interpolate
 import networkx as nx
 import numpy.linalg
 import polyhedron
-import smoothener
 import uuid
 
 class Voronizator:
     def __init__(self, sites=np.array([])):
-        self._smoothener = smoothener.Smoothener()
         self._sites = sites
         self._shortestPath = np.array([])
         self._graph = nx.Graph()
@@ -102,7 +101,35 @@ class Voronizator:
 
     def plotShortestPath(self, plotter):
         if self._shortestPath.size > 0:
-            self._smoothener.plot(self._shortestPath, plotter)
+            x = self._shortestPath[:,0]
+            y = self._shortestPath[:,1]
+            z = self._shortestPath[:,2]
+
+            t = range(len(self._shortestPath))
+            ipl_t = np.linspace(0.0, len(self._shortestPath) - 1, 100)
+            #TODO: find a better way to substitute 100 above
+            x_tup = sp.interpolate.splrep(t, x, k=4)
+            y_tup = sp.interpolate.splrep(t, y, k=4)
+            z_tup = sp.interpolate.splrep(t, z, k=4)
+
+            x_list = list(x_tup)
+            xl = x.tolist()
+            x_list[1] = xl + [0.0, 0.0, 0.0, 0.0]
+
+            y_list = list(y_tup)
+            yl = y.tolist()
+            y_list[1] = yl + [0.0, 0.0, 0.0, 0.0]
+
+            z_list = list(z_tup)
+            zl = z.tolist()
+            z_list[1] = zl + [0.0, 0.0, 0.0, 0.0]
+
+            x_i = sp.interpolate.splev(ipl_t, x_list)
+            y_i = sp.interpolate.splev(ipl_t, y_list)
+            z_i = sp.interpolate.splev(ipl_t, z_list)
+
+            plotter.plot(x, y, z, 'r--')
+            plotter.plot(x_i, y_i, z_i, 'r', lw=2)
         if self._pathStart.size > 0:
             plotter.plot([self._pathStart[0]], [self._pathStart[1]], [self._pathStart[2]], 'ro')
         if self._pathEnd.size > 0:
@@ -262,7 +289,7 @@ class Voronizator:
 
         return np.array(path)
 
-        #TODO: aggiustare il path quando collide (roba sotto); cambiare plotter b-splines
+        #TODO: adjust when path collides (see below)
 
 
 
