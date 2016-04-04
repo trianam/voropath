@@ -39,7 +39,7 @@ if len(sys.argv) >= 13 and len(sys.argv) <= 14:
     maxEmptyArea = float(sys.argv[i])
     i += 1
     fileName = sys.argv[i]
-    
+
 else:
     minX = float(input('Insert min scene X: '))
     minY = float(input('Insert min scene Y: '))
@@ -56,7 +56,7 @@ else:
     avoidCollisions = bool(eval(input('Do you want to avoid collisions between obstacles? (True/False): ')))
     numObstacles = int(input('Insert obstacles number: '))
     maxEmptyArea = float(input('Insert max empty area (for points distribution in obstacles): '))
-        
+
     fileName = input('Insert file name: ')
 
 voronoi = voronizator.Voronizator()
@@ -92,8 +92,11 @@ for ob in range(numObstacles):
             voronoi.addPolyhedron(newObstacle)
             if avoidCollisions:
                 obstacles[:0] = [newObstacle]
-            
+
     print(' done', flush=True)
+
+print('Add bounding box', flush=True)
+voronoi.addBoundingBox([minX, minY, minZ], [maxX, maxY, maxZ], maxEmptyArea)
 
 print('Set sites for Voronoi', flush=True)
 voronoi.setPolyhedronsSites()
