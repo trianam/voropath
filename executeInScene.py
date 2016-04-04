@@ -32,7 +32,7 @@ if len(sys.argv) >= 2:
     voronoi.plotPolyhedrons(ax)
     #voronoi.plotGraph(ax, edges=False, labels=True)
     #voronoi.plotGraph(ax, pathExtremes=True)
-    voronoi.plotGraph(ax)
+    #voronoi.plotGraph(ax)
     voronoi.plotShortestPath(ax)
 
     ax.set_xlabel('x')

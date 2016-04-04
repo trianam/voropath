@@ -113,9 +113,9 @@ class Voronizator:
             t = range(len(self._shortestPath))
             ipl_t = np.linspace(0.0, len(self._shortestPath) - 1, 1000)
             #TODO: find a better way to substitute 100 above
-            x_tup = sp.interpolate.splrep(t, x, k=4)
-            y_tup = sp.interpolate.splrep(t, y, k=4)
-            z_tup = sp.interpolate.splrep(t, z, k=4)
+            x_tup = sp.interpolate.splrep(t, x, k=5)
+            y_tup = sp.interpolate.splrep(t, y, k=5)
+            z_tup = sp.interpolate.splrep(t, z, k=5)
 
             x_list = list(x_tup)
             xl = x.tolist()
