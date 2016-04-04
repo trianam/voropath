@@ -9,7 +9,7 @@ import polyhedron
 import uuid
 
 class Voronizator:
-    def __init__(self, sites=np.array([])):
+    def __init__(self, sites=np.array([]), bsplineDegree=4):
         self._sites = sites
         self._shortestPath = np.array([])
         self._graph = nx.Graph()
@@ -21,6 +21,10 @@ class Voronizator:
         self._pathEnd = np.array([])
         self._startId = uuid.uuid4()
         self._endId = uuid.uuid4()
+        self._bsplineDegree = bsplineDegree
+
+    def setBsplineDegree(self, bsplineDegree):
+        self._bsplineDegree = bsplineDegree
 
     def setCustomSites(self, sites):
         self._sites = sites
@@ -80,7 +84,7 @@ class Voronizator:
 
                             self._graph.add_edge(idA, idB, weight=np.linalg.norm(a-b))
 
-    def calculateShortestPath(self, start, end, attachMode='near', prune=True, verbose=False, debug=False):
+    def calculateShortestPath(self, start, end, attachMode='near', prune=True, postSimplify=True, verbose=False, debug=False):
         if verbose:
             print('Attach start and end points', flush=True)
         if attachMode=='near':
@@ -95,7 +99,7 @@ class Voronizator:
 
         self._createTripleGraph(verbose, debug)
         triPath = self._trijkstra(verbose, debug)
-        self._shortestPath = self._extractPath(triPath, verbose,debug)
+        self._shortestPath = self._extractPath(triPath, postSimplify, verbose, debug)
 
     def plotSites(self, plotter):
         if self._sites.size > 0:
@@ -114,9 +118,9 @@ class Voronizator:
             t = range(len(self._shortestPath))
             ipl_t = np.linspace(0.0, len(self._shortestPath) - 1, 1000)
             #TODO: find a better way to substitute 100 above
-            x_tup = sp.interpolate.splrep(t, x, k=5)
-            y_tup = sp.interpolate.splrep(t, y, k=5)
-            z_tup = sp.interpolate.splrep(t, z, k=5)
+            x_tup = sp.interpolate.splrep(t, x, k = self._bsplineDegree+1)
+            y_tup = sp.interpolate.splrep(t, y, k = self._bsplineDegree+1)
+            z_tup = sp.interpolate.splrep(t, z, k = self._bsplineDegree+1)
 
             x_list = list(x_tup)
             xl = x.tolist()
@@ -227,57 +231,67 @@ class Voronizator:
 
     def _createTripleGraph(self, verbose, debug):
         #create triplets
+
+        if debug:
+            triplets_file = open("triplets.txt","w")
+
         if verbose:
             print('Create triplets ', end='', flush=True)
 
-        if debug:
-            hits_file = open("hits.txt","w")
+        tripletIdList = {}
+        def getUniqueId(triplet):
+            if tuple(triplet) in tripletIdList.keys():
+                tripletId = tripletIdList[tuple(triplet)]
+            else:
+                tripletId = uuid.uuid4()
+                tripletIdList[tuple(triplet)] = tripletId
+                self._tGraph.add_node(tripletId, triplet = triplet)
+            return tripletId
 
-        for node0 in self._graph.nodes():
-            for node1 in self._graph.neighbors(node0):
-                for node2 in filter(lambda node: node!=node0, self._graph.neighbors(node1)):
-                    if verbose:
-                        print('.', end='', flush=True)
+        for edge in self._graph.edges():
+            if verbose:
+                print('.', end='', flush=True)
 
-                    tripletId = uuid.uuid4()
-                    self._tGraph.add_node(tripletId, triplet = [node0,node1,node2], hit=False)
-                    if debug:
-                        hits_file.write(str(self._tGraph.node[tripletId]['triplet'])+"\n")
+            tripletsSxOutgoing = []
+            tripletsSxIngoing = []
+            tripletsDxOutgoing = []
+            tripletsDxIngoing = []
 
+            for nodeSx in filter(lambda node: node != edge[1], self._graph.neighbors(edge[0])):
+                tripletId = getUniqueId([nodeSx,edge[0],edge[1]])
+                tripletsSxOutgoing.append(tripletId)
+                if debug:
+                    triplets_file.write('SxO: {}\n'.format(self._tGraph.node[tripletId]['triplet']))
 
-                    # if not self._tGraph.node[tripletId]['triplet'][::-1] in [n for n,attr in self._tGraph.node.items() if attr['hit'] == True]:
-                    #     intersect,result = self._triangleIntersectPolyhedrons(self._graph.node[node0]['coord'], self._graph.node[node1]['coord'], self._graph.node[node2]['coord'])
-                    #     if not intersect:
-                    #         self._tGraph.node[tripletId]['hit'] = False
-                    #         #Q.add(triplet, d)
-                    #     else:
-                    #         if debug:
-                    #             hits_file.write(str(self._tGraph.node[tripletId]['triplet'])+"\n")
-                    #         self._tGraph.node[tripletId]['hit'] = True
-                    #         self._tGraph.node[tripletId]['hitRes'] = result[1]
-                    # else:
-                    #     if debug:
-                    #         hits_file.write(str(self._tGraph.node[tripletId]['triplet'])+"\n")
-                    #     self._tGraph.node[tripletId]['hit'] = True
-                    #     self._tGraph.node[tripletId]['hitRes'] = [n for n,attr in self._tGraph.node.items() if attr['triplet'][::-1] == self._tGraph.node[tripletId]['triplet']][0]
+                tripletId = getUniqueId([edge[1],edge[0],nodeSx])
+                tripletsSxIngoing.append(tripletId)
+                if debug:
+                    triplets_file.write('SxI: {}\n'.format(self._tGraph.node[tripletId]['triplet']))
+
+            for nodeDx in filter(lambda node: node != edge[0], self._graph.neighbors(edge[1])):
+                tripletId = getUniqueId([nodeDx,edge[1],edge[0]])
+                tripletsDxOutgoing.append(tripletId)
+                if debug:
+                    triplets_file.write('DxO: {}\n'.format(self._tGraph.node[tripletId]['triplet']))
+
+                tripletId = getUniqueId([edge[0],edge[1],nodeDx])
+                tripletsDxIngoing.append(tripletId)
+                if debug:
+                    triplets_file.write('DxI: {}\n'.format(self._tGraph.node[tripletId]['triplet']))
+
+            for tripletSx in tripletsSxOutgoing:
+                for tripletDx in tripletsDxIngoing:
+                    self._tGraph.add_edge(tripletSx, tripletDx, {'weight':self._graph.edge[self._tGraph.node[tripletSx]['triplet'][0]][self._tGraph.node[tripletDx]['triplet'][0]]['weight']})
+
+            for tripletDx in tripletsDxOutgoing:
+                for tripletSx in tripletsSxIngoing:
+                    self._tGraph.add_edge(tripletDx, tripletSx, {'weight':self._graph.edge[self._tGraph.node[tripletDx]['triplet'][0]][self._tGraph.node[tripletSx]['triplet'][0]]['weight']})
 
         if verbose:
             print('', flush=True)
 
         if debug:
-            hits_file.close()
-
-        #create edges between triples
-        if verbose:
-            print('Create edges between triples', end='', flush=True)
-
-        for triple in self._tGraph.nodes():
-            #self._tGraph.add_edges_from([(triple,n,{'weight':self._graph.edge[self._tGraph.node[triple]['triplet'][0]][self._tGraph.node[n]['triplet'][0]]['weight']}) for n in self._tGraph.nodes() if self._tGraph.node[n]['triplet'][0] == self._tGraph.node[triple]['triplet'][1] and self._tGraph.node[n]['triplet'][1] == self._tGraph.node[triple]['triplet'][2]])
-            for n in self._tGraph.nodes():
-                if self._tGraph.node[n]['triplet'][0] == self._tGraph.node[triple]['triplet'][1] and self._tGraph.node[n]['triplet'][1] == self._tGraph.node[triple]['triplet'][2]:
-                    if verbose:
-                        print('.', end='', flush=True)
-                    self._tGraph.add_edge(triple, n, {'weight':self._graph.edge[self._tGraph.node[triple]['triplet'][0]][self._tGraph.node[n]['triplet'][0]]['weight']})
+            triplets_file.close()
 
         #attach special starting and ending triplet
         if verbose:
@@ -304,7 +318,7 @@ class Voronizator:
 
         return triPath
 
-    def _extractPath(self, triPath, verbose, debug):
+    def _extractPath(self, triPath, postSimplify, verbose, debug):
         if verbose:
             print('', flush=True)
             print('Adjust hits and construct path', flush=True)
@@ -319,69 +333,88 @@ class Voronizator:
                 a = self._tGraph.node[t]['triplet'][0]
                 v = self._tGraph.node[t]['triplet'][1]
                 b = self._tGraph.node[t]['triplet'][2]
-                intersect,alpha = self._triangleIntersectPolyhedrons(self._graph.node[a]['coord'], self._graph.node[v]['coord'], self._graph.node[b]['coord'])
+
+                intersect,intersectRes = self._triangleIntersectPolyhedrons(self._graph.node[a]['coord'], self._graph.node[v]['coord'], self._graph.node[b]['coord'])
                 if intersect:
+                    alpha = intersectRes[1]
                     #adjust graph
                     #a1,b1 for avoiding obstacle
                     #a2,b2 for augmenting grade
                     a1 = uuid.uuid4()
                     b1 = uuid.uuid4()
-                    a2 = uuid.uuid4()
-                    b2 = uuid.uuid4()
 
                     self._graph.add_node(a1, coord = (1.-alpha)*self._graph.node[a]['coord'] + alpha*self._graph.node[v]['coord'])
                     self._graph.add_node(b1, coord = alpha*self._graph.node[v]['coord'] + (1.-alpha)*self._graph.node[b]['coord'])
-                    self._graph.add_node(a2, coord = 0.25*self._graph.node[a1]['coord'] + 0.75*self._graph.node[v]['coord'])
-                    self._graph.add_node(b2, coord = 0.25*self._graph.node[b1]['coord'] + 0.75*self._graph.node[v]['coord'])
 
                     self._graph.remove_edge(a,v)
                     self._graph.remove_edge(v,b)
 
-                    self._graph.add_edge(a,a1, weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[a1]['coord']))
-                    self._graph.add_edge(a1,a2, weight=np.linalg.norm(self._graph.node[a1]['coord'] - self._graph.node[a2]['coord']))
-                    self._graph.add_edge(a2,v, weight=np.linalg.norm(self._graph.node[a2]['coord'] - self._graph.node[v]['coord']))
-                    self._graph.add_edge(v,b2, weight=np.linalg.norm(self._graph.node[v]['coord'] - self._graph.node[b2]['coord']))
-                    self._graph.add_edge(b2,b1, weight=np.linalg.norm(self._graph.node[b2]['coord'] - self._graph.node[b1]['coord']))
-                    self._graph.add_edge(b1,b, weight=np.linalg.norm(self._graph.node[b1]['coord'] - self._graph.node[b]['coord']))
+                    if self._bsplineDegree <= 2:
+                        self._graph.add_edge(a,a1, weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[a1]['coord']))
+                        self._graph.add_edge(a1,v, weight=np.linalg.norm(self._graph.node[a1]['coord'] - self._graph.node[v]['coord']))
+                        self._graph.add_edge(v,b1, weight=np.linalg.norm(self._graph.node[v]['coord'] - self._graph.node[b1]['coord']))
+                        self._graph.add_edge(b1,b, weight=np.linalg.norm(self._graph.node[b1]['coord'] - self._graph.node[b]['coord']))
+
+                        path.append(self._graph.node[a1]['coord'])
+                        path.append(self._graph.node[v]['coord'])
+                        path.append(self._graph.node[b1]['coord'])
+
+                    elif self._bsplineDegree == 4:
+                        a2 = uuid.uuid4()
+                        b2 = uuid.uuid4()
+                        self._graph.add_node(a2, coord = 0.25*self._graph.node[a1]['coord'] + 0.75*self._graph.node[v]['coord'])
+                        self._graph.add_node(b2, coord = 0.25*self._graph.node[b1]['coord'] + 0.75*self._graph.node[v]['coord'])
+
+                        self._graph.add_edge(a,a1, weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[a1]['coord']))
+                        self._graph.add_edge(a1,a2, weight=np.linalg.norm(self._graph.node[a1]['coord'] - self._graph.node[a2]['coord']))
+                        self._graph.add_edge(a2,v, weight=np.linalg.norm(self._graph.node[a2]['coord'] - self._graph.node[v]['coord']))
+                        self._graph.add_edge(v,b2, weight=np.linalg.norm(self._graph.node[v]['coord'] - self._graph.node[b2]['coord']))
+                        self._graph.add_edge(b2,b1, weight=np.linalg.norm(self._graph.node[b2]['coord'] - self._graph.node[b1]['coord']))
+                        self._graph.add_edge(b1,b, weight=np.linalg.norm(self._graph.node[b1]['coord'] - self._graph.node[b]['coord']))
+
+                        path.append(self._graph.node[a1]['coord'])
+                        path.append(self._graph.node[a2]['coord'])
+                        path.append(self._graph.node[v]['coord'])
+                        path.append(self._graph.node[b2]['coord'])
+                        path.append(self._graph.node[b1]['coord'])
 
                     #adjust next triple
                     if i < len(triPath)-1:
                         self._tGraph.node[triPath[i+1]]['triplet'][0] = b1
-
-                    path.append(self._graph.node[a1]['coord'])
-                    path.append(self._graph.node[a2]['coord'])
-                    path.append(self._graph.node[v]['coord'])
-                    path.append(self._graph.node[b2]['coord'])
-                    path.append(self._graph.node[b1]['coord'])
 
                 else:
-                    # #delete triple
-                    # if i < len(triPath)-1:
-                    #     self._tGraph.node[triPath[i+1]]['triplet'][0] = a
-                    #     self._graph.add_edge(a,self._tGraph.node[triPath[i+1]]['triplet'][1], weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[self._tGraph.node[triPath[i+1]]['triplet'][1]]['coord']))
+                    if postSimplify:
+                        #delete triple
+                        if i < len(triPath)-1:
+                            self._tGraph.node[triPath[i+1]]['triplet'][0] = a
+                            self._graph.add_edge(a,self._tGraph.node[triPath[i+1]]['triplet'][1], weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[self._tGraph.node[triPath[i+1]]['triplet'][1]]['coord']))
 
-                    #a1,b1 for augmenting grade
-                    a1 = uuid.uuid4()
-                    b1 = uuid.uuid4()
+                    else:
+                        if self._bsplineDegree <= 2:
+                            path.append(self._graph.node[v]['coord'])
+                        elif self._bsplineDegree == 4:
+                            #a1,b1 for augmenting grade
+                            a1 = uuid.uuid4()
+                            b1 = uuid.uuid4()
 
-                    self._graph.add_node(a1, coord = 0.25*self._graph.node[a]['coord'] + 0.75*self._graph.node[v]['coord'])
-                    self._graph.add_node(b1, coord = 0.25*self._graph.node[b]['coord'] + 0.75*self._graph.node[v]['coord'])
+                            self._graph.add_node(a1, coord = 0.25*self._graph.node[a]['coord'] + 0.75*self._graph.node[v]['coord'])
+                            self._graph.add_node(b1, coord = 0.25*self._graph.node[b]['coord'] + 0.75*self._graph.node[v]['coord'])
 
-                    self._graph.remove_edge(a,v)
-                    self._graph.remove_edge(v,b)
+                            self._graph.remove_edge(a,v)
+                            self._graph.remove_edge(v,b)
 
-                    self._graph.add_edge(a,a1, weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[a1]['coord']))
-                    self._graph.add_edge(a1,v, weight=np.linalg.norm(self._graph.node[a1]['coord'] - self._graph.node[v]['coord']))
-                    self._graph.add_edge(v,b1, weight=np.linalg.norm(self._graph.node[v]['coord'] - self._graph.node[b1]['coord']))
-                    self._graph.add_edge(b1,b, weight=np.linalg.norm(self._graph.node[b1]['coord'] - self._graph.node[b]['coord']))
+                            self._graph.add_edge(a,a1, weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[a1]['coord']))
+                            self._graph.add_edge(a1,v, weight=np.linalg.norm(self._graph.node[a1]['coord'] - self._graph.node[v]['coord']))
+                            self._graph.add_edge(v,b1, weight=np.linalg.norm(self._graph.node[v]['coord'] - self._graph.node[b1]['coord']))
+                            self._graph.add_edge(b1,b, weight=np.linalg.norm(self._graph.node[b1]['coord'] - self._graph.node[b]['coord']))
 
-                    #adjust next triple
-                    if i < len(triPath)-1:
-                        self._tGraph.node[triPath[i+1]]['triplet'][0] = b1
+                            #adjust next triple
+                            if i < len(triPath)-1:
+                                self._tGraph.node[triPath[i+1]]['triplet'][0] = b1
 
-                    path.append(self._graph.node[a1]['coord'])
-                    path.append(self._graph.node[v]['coord'])
-                    path.append(self._graph.node[b1]['coord'])
+                            path.append(self._graph.node[a1]['coord'])
+                            path.append(self._graph.node[v]['coord'])
+                            path.append(self._graph.node[b1]['coord'])
 
         #path = [self._graph.node[self._tGraph.node[n]['triplet'][1]]['coord'] for n in triPath]
         return np.array(path)

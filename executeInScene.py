@@ -23,9 +23,10 @@ if len(sys.argv) >= 2:
     ax = Axes3D(fig)
 
     voronoi = record['voronoi']
+    voronoi.setBsplineDegree(2)
 
     print('Calculate shortest path', flush=True)
-    voronoi.calculateShortestPath(startPoint, endPoint, 'near', verbose=True, debug=False)
+    voronoi.calculateShortestPath(startPoint, endPoint, 'near', postSimplify=False, verbose=True, debug=False)
 
     print('Plot', flush=True)
     #voronoi.plotSites(ax)
