@@ -58,26 +58,27 @@ class Voronizator:
         vor = sp.spatial.Voronoi(self._sites)
         vorVer = vor.vertices
         for ridge in vor.ridge_vertices:
-            for i in range(len(ridge)):
-                if (ridge[i] != -1) and (ridge[(i+1)%len(ridge)] != -1):
-                    a = vorVer[ridge[i]]
-                    b = vorVer[ridge[(i+1)%len(ridge)]]
-                    if (not prune) or (not self._segmentIntersectPolyhedrons(a,b)):
-                        if tuple(a) in ids.keys():
-                            idA = ids[tuple(a)]
-                        else:
-                            idA = uuid.uuid4()
-                            self._graph.add_node(idA, coord=a)
-                            ids[tuple(a)] = idA
+            for i in range(1, len(ridge)):
+                for j in range(i):
+                    if (ridge[i] != -1) and (ridge[j] != -1):
+                        a = vorVer[ridge[i]]
+                        b = vorVer[ridge[j]]
+                        if (not prune) or (not self._segmentIntersectPolyhedrons(a,b)):
+                            if tuple(a) in ids.keys():
+                                idA = ids[tuple(a)]
+                            else:
+                                idA = uuid.uuid4()
+                                self._graph.add_node(idA, coord=a)
+                                ids[tuple(a)] = idA
 
-                        if tuple(b) in ids.keys():
-                            idB = ids[tuple(b)]
-                        else:
-                            idB = uuid.uuid4()
-                            self._graph.add_node(idB, coord=b)
-                            ids[tuple(b)] = idB
+                            if tuple(b) in ids.keys():
+                                idB = ids[tuple(b)]
+                            else:
+                                idB = uuid.uuid4()
+                                self._graph.add_node(idB, coord=b)
+                                ids[tuple(b)] = idB
 
-                        self._graph.add_edge(idA, idB, weight=np.linalg.norm(a-b))
+                            self._graph.add_edge(idA, idB, weight=np.linalg.norm(a-b))
 
     def calculateShortestPath(self, start, end, attachMode='near', prune=True, verbose=False, debug=False):
         if verbose:
@@ -354,33 +355,33 @@ class Voronizator:
                     path.append(self._graph.node[b1]['coord'])
 
                 else:
-                    #delete triple
-                    if i < len(triPath)-1:
-                        self._tGraph.node[triPath[i+1]]['triplet'][0] = a
-                        self._graph.add_edge(a,self._tGraph.node[triPath[i+1]]['triplet'][1], weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[self._tGraph.node[triPath[i+1]]['triplet'][1]]['coord']))
-
-                    # #a1,b1 for augmenting grade
-                    # a1 = uuid.uuid4()
-                    # b1 = uuid.uuid4()
-                    #
-                    # self._graph.add_node(a1, coord = 0.25*self._graph.node[a]['coord'] + 0.75*self._graph.node[v]['coord'])
-                    # self._graph.add_node(b1, coord = 0.25*self._graph.node[b]['coord'] + 0.75*self._graph.node[v]['coord'])
-                    #
-                    # self._graph.remove_edge(a,v)
-                    # self._graph.remove_edge(v,b)
-                    #
-                    # self._graph.add_edge(a,a1, weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[a1]['coord']))
-                    # self._graph.add_edge(a1,v, weight=np.linalg.norm(self._graph.node[a1]['coord'] - self._graph.node[v]['coord']))
-                    # self._graph.add_edge(v,b1, weight=np.linalg.norm(self._graph.node[v]['coord'] - self._graph.node[b1]['coord']))
-                    # self._graph.add_edge(b1,b, weight=np.linalg.norm(self._graph.node[b1]['coord'] - self._graph.node[b]['coord']))
-                    #
-                    # #adjust next triple
+                    # #delete triple
                     # if i < len(triPath)-1:
-                    #     self._tGraph.node[triPath[i+1]]['triplet'][0] = b1
-                    #
-                    # path.append(self._graph.node[a1]['coord'])
-                    # path.append(self._graph.node[v]['coord'])
-                    # path.append(self._graph.node[b1]['coord'])
+                    #     self._tGraph.node[triPath[i+1]]['triplet'][0] = a
+                    #     self._graph.add_edge(a,self._tGraph.node[triPath[i+1]]['triplet'][1], weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[self._tGraph.node[triPath[i+1]]['triplet'][1]]['coord']))
+
+                    #a1,b1 for augmenting grade
+                    a1 = uuid.uuid4()
+                    b1 = uuid.uuid4()
+
+                    self._graph.add_node(a1, coord = 0.25*self._graph.node[a]['coord'] + 0.75*self._graph.node[v]['coord'])
+                    self._graph.add_node(b1, coord = 0.25*self._graph.node[b]['coord'] + 0.75*self._graph.node[v]['coord'])
+
+                    self._graph.remove_edge(a,v)
+                    self._graph.remove_edge(v,b)
+
+                    self._graph.add_edge(a,a1, weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[a1]['coord']))
+                    self._graph.add_edge(a1,v, weight=np.linalg.norm(self._graph.node[a1]['coord'] - self._graph.node[v]['coord']))
+                    self._graph.add_edge(v,b1, weight=np.linalg.norm(self._graph.node[v]['coord'] - self._graph.node[b1]['coord']))
+                    self._graph.add_edge(b1,b, weight=np.linalg.norm(self._graph.node[b1]['coord'] - self._graph.node[b]['coord']))
+
+                    #adjust next triple
+                    if i < len(triPath)-1:
+                        self._tGraph.node[triPath[i+1]]['triplet'][0] = b1
+
+                    path.append(self._graph.node[a1]['coord'])
+                    path.append(self._graph.node[v]['coord'])
+                    path.append(self._graph.node[b1]['coord'])
 
         #path = [self._graph.node[self._tGraph.node[n]['triplet'][1]]['coord'] for n in triPath]
         return np.array(path)
