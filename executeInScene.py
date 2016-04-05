@@ -16,6 +16,7 @@ if len(sys.argv) >= 2:
         startPoint = np.array(tuple(eval(input('Insert start point (x,y,z): '))),dtype=float)
         endPoint = np.array(tuple(eval(input('Insert end point (x,y,z): '))),dtype=float)
 
+    print('Load file', flush=True)
     with open(sys.argv[1], 'rb') as f:
         record = pickle.load(f)
 

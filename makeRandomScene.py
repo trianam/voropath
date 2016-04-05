@@ -103,6 +103,7 @@ voronoi.setPolyhedronsSites()
 print('Make pruned voronoi Graph', flush=True)
 voronoi.makeVoroGraph()
 
+print('Write file', flush=True)
 record = {}
 record['voronoi'] = voronoi
 record['minX'] = minX

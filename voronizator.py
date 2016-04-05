@@ -57,7 +57,7 @@ class Voronizator:
 
         self._sites = np.array(sites)
 
-    def makeVoroGraph(self, prune=True):
+    def makeVoroGraph(self, prune=True, verbose=True, debug=False):
         ids = {}
         vor = sp.spatial.Voronoi(self._sites)
         vorVer = vor.vertices
@@ -84,6 +84,8 @@ class Voronizator:
 
                             self._graph.add_edge(idA, idB, weight=np.linalg.norm(a-b))
 
+        self._createTripleGraph(verbose, debug)
+
     def calculateShortestPath(self, start, end, attachMode='near', prune=True, postSimplify=True, verbose=False, debug=False):
         if verbose:
             print('Attach start and end points', flush=True)
@@ -94,10 +96,11 @@ class Voronizator:
         else:
             self._attachToGraphNear(start, end, prune)
 
+        self._attachSpecialStartEndTriples(verbose)
+
         self._pathStart = start
         self._pathEnd = end
 
-        self._createTripleGraph(verbose, debug)
         triPath = self._trijkstra(verbose, debug)
         self._shortestPath = self._extractPath(triPath, postSimplify, verbose, debug)
 
@@ -214,20 +217,41 @@ class Voronizator:
                         minDistE = currDist
 
         if minAttachS != None:
-            self._graph.add_node(self._startId, coord=start)
-            self._graph.add_edge(self._startId, minAttachS, weight=minDistS)
+            self._addNodeToTGraph(self._startId, start, minAttachS, minDistS, rightDirection=True)
         if minAttachE != None:
-            self._graph.add_node(self._endId, coord=end)
-            self._graph.add_edge(self._endId, minAttachE, weight=minDistE)
+            self._addNodeToTGraph(self._endId, end, minAttachE, minDistE, rightDirection=False)
 
     def _attachToGraphAll(self, start, end, prune):
         for node,nodeAttr in self._graph.node.items():
             if (not prune) or (not self._segmentIntersectPolyhedrons(start, nodeAttr['coord'])):
-                self._graph.add_node(self._startId, coord=start)
-                self._graph.add_edge(self._startId, node, weight=np.linalg.norm(start - nodeAttr['coord']))
+                self._addNodeToTGraph(self._startId, start, node, np.linalg.norm(start - nodeAttr['coord']), rightDirection=True)
             if (not prune) or (not self._segmentIntersectPolyhedrons(end, nodeAttr['coord'])):
-                self._graph.add_node(self._endId, coord=end)
-                self._graph.add_edge(self._endId, node, weight=np.linalg.norm(end - nodeAttr['coord']))
+                self._addNodeToTGraph(self._endId, end, node, np.linalg.norm(end - nodeAttr['coord']), rightDirection=False)
+
+    def _addNodeToTGraph(self, newId, coord, attachId, dist, rightDirection):
+        self._graph.add_node(newId, coord=coord)
+        self._graph.add_edge(newId, attachId, weight=dist)
+        for otherId in filter(lambda node: node != newId, self._graph.neighbors(attachId)):
+            newTriplet = uuid.uuid4()
+            if rightDirection:
+                self._tGraph.add_node(newTriplet, triplet=[newId,attachId,otherId])
+                self._tGraph.add_edges_from([(newTriplet, otherTriplet, {'weight':dist}) for otherTriplet in self._tGraph.nodes() if self._tGraph.node[otherTriplet]['triplet'][0] == attachId  and self._tGraph.node[otherTriplet]['triplet'][1] == otherId])
+
+            else:
+                self._tGraph.add_node(newTriplet, triplet=[otherId,attachId,newId])
+                self._tGraph.add_edges_from([(otherTriplet, newTriplet, {'weight':dist}) for otherTriplet in self._tGraph.nodes() if self._tGraph.node[otherTriplet]['triplet'][1] == otherId  and self._tGraph.node[otherTriplet]['triplet'][2] == attachId])
+
+    def _attachSpecialStartEndTriples(self, verbose):
+        #attach special starting and ending triplet
+        if verbose:
+            print('Create starting and ending triplets', flush=True)
+
+        self._startTriplet = uuid.uuid4()
+        self._endTriplet = uuid.uuid4()
+        self._tGraph.add_node(self._startTriplet, triplet = [self._startId,self._startId,self._startId], hit = False)
+        self._tGraph.add_node(self._endTriplet, triplet = [self._endId,self._endId,self._endId], hit = False)
+        self._tGraph.add_edges_from([(self._startTriplet, n, {'weight':0.}) for n in self._tGraph.nodes() if self._tGraph.node[n]['triplet'][0] == self._startId])
+        self._tGraph.add_edges_from([(n, self._endTriplet, {'weight':0.}) for n in self._tGraph.nodes() if self._tGraph.node[n]['triplet'][2] == self._endId])
 
     def _createTripleGraph(self, verbose, debug):
         #create triplets
@@ -293,34 +317,23 @@ class Voronizator:
         if debug:
             triplets_file.close()
 
-        #attach special starting and ending triplet
-        if verbose:
-            print('', flush=True)
-            print('Create starting and ending triplets', flush=True)
-
-        self._startTriplet = uuid.uuid4()
-        self._endTriplet = uuid.uuid4()
-        self._tGraph.add_node(self._startTriplet, triplet = [self._startId,self._startId,self._startId], hit = False)
-        self._tGraph.add_node(self._endTriplet, triplet = [self._endId,self._endId,self._endId], hit = False)
-        self._tGraph.add_edges_from([(self._startTriplet, n, {'weight':0.}) for n in self._tGraph.nodes() if self._tGraph.node[n]['triplet'][0] == self._startId])
-        self._tGraph.add_edges_from([(n, self._endTriplet, {'weight':0.}) for n in self._tGraph.nodes() if self._tGraph.node[n]['triplet'][2] == self._endId])
 
     def _trijkstra(self, verbose, debug):
         try:
             if verbose:
-                print('Dijkstra algorithm', end='', flush=True)
+                print('Dijkstra algorithm', flush=True)
 
             length,triPath=nx.bidirectional_dijkstra(self._tGraph, self._startTriplet, self._endTriplet)
 
 
         except (nx.NetworkXNoPath, nx.NetworkXError):
+            print('ERROR: Impossible to find a path')
             triPath = []
 
         return triPath
 
     def _extractPath(self, triPath, postSimplify, verbose, debug):
         if verbose:
-            print('', flush=True)
             print('Adjust hits and construct path', flush=True)
 
         path = []
