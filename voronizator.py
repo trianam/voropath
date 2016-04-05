@@ -58,10 +58,21 @@ class Voronizator:
         self._sites = np.array(sites)
 
     def makeVoroGraph(self, prune=True, verbose=True, debug=False):
+        if verbose:
+            print('Calculate Voronoi cells', flush=True)
         ids = {}
         vor = sp.spatial.Voronoi(self._sites)
+
+        if verbose:
+            print('Make pruned Graph from cell edges ', end='', flush=True)
+            printDotBunch = 0
         vorVer = vor.vertices
         for ridge in vor.ridge_vertices:
+            if verbose:
+                if printDotBunch == 0:
+                    print('.', end='', flush=True)
+                printDotBunch = (printDotBunch+1)%10
+
             for i in range(1, len(ridge)):
                 for j in range(i):
                     if (ridge[i] != -1) and (ridge[j] != -1):
@@ -83,6 +94,9 @@ class Voronizator:
                                 ids[tuple(b)] = idB
 
                             self._graph.add_edge(idA, idB, weight=np.linalg.norm(a-b))
+
+        if verbose:
+            print('', flush=True)
 
         self._createTripleGraph(verbose, debug)
 
@@ -261,6 +275,7 @@ class Voronizator:
 
         if verbose:
             print('Create triplets ', end='', flush=True)
+            printDotBunch = 0
 
         tripletIdList = {}
         def getUniqueId(triplet):
@@ -274,7 +289,10 @@ class Voronizator:
 
         for edge in self._graph.edges():
             if verbose:
-                print('.', end='', flush=True)
+                if printDotBunch == 0:
+                    print('.', end='', flush=True)
+                printDotBunch = (printDotBunch+1)%10
+
 
             tripletsSxOutgoing = []
             tripletsSxIngoing = []

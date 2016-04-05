@@ -100,7 +100,6 @@ voronoi.addBoundingBox([minX, minY, minZ], [maxX, maxY, maxZ], maxEmptyArea)
 
 print('Set sites for Voronoi', flush=True)
 voronoi.setPolyhedronsSites()
-print('Make pruned voronoi Graph', flush=True)
 voronoi.makeVoroGraph()
 
 print('Write file', flush=True)
