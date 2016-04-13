@@ -1,17 +1,13 @@
 #!/usr/bin/python
 
-from mpl_toolkits.mplot3d import  axes3d,Axes3D
 import numpy as np
-import matplotlib.pyplot as plt
 import voronizator
-import polyhedron
+import tetrahedron
+import plotter
 
 voronoi = voronizator.Voronizator()
 
-fig = plt.figure()
-ax = fig.gca(projection='3d')
-
-voronoi.addPolyhedron(polyhedron.Polyhedron(a = [0.1,0.1,0.1], b = [0.3,0.3,0.1], c = [0.4,0.2,0.2], d = [0.1,0.2,0.2]))
+voronoi.addPolyhedron(tetrahedron.Tetrahedron(a = [0.1,0.1,0.1], b = [0.3,0.3,0.1], c = [0.4,0.2,0.2], d = [0.1,0.2,0.2]))
 
 #make test graph
 
@@ -42,20 +38,14 @@ voronoi._pathStart = np.array(ns)
 voronoi._pathEnd = np.array(ne)
 
 #voronoi._shortestPath = voronoi._dijkstraPlus(voronoi._pathStart, voronoi._pathEnd)
-voronoi._shortestPath = voronoi._trijkstra(voronoi._pathStart, voronoi._pathEnd)
+voronoi._shortestPath = voronoi._extractPath(voronoi._trijkstra(True, False), False, True, False)
 
 
 #plot
-voronoi.plotPolyhedrons(ax)
-voronoi.plotGraph(ax, pathExtremes=True, labels=True)
-voronoi.plotShortestPath(ax)
+plt = plotter.Plotter()
 
-ax.set_xlim3d(0., .4)
-ax.set_ylim3d(0., .4)
-ax.set_zlim3d(0., .4)
+voronoi.plotPolyhedrons(plt)
+voronoi.plotGraph(plt)
+voronoi.plotShortestPath(plt)
 
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-ax.set_zlabel('z')
-
-plt.show()
+plt.draw()
