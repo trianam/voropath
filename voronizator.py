@@ -144,29 +144,17 @@ class Voronizator:
 
     def plotShortestPath(self, plotter, verbose=False):
         if verbose:
-            print('Plot shortest path', end='', flush=True)
+            print('Plot shortest path', flush=True)
             
         if self._shortestPath.size > 0:
+            plotter.addPolyLine(self._shortestPath, plotter.COLOR_CONTROL_POLIG)
             plotter.addBSpline(self._shortestPath, self._bsplineDegree, plotter.COLOR_PATH)
 
-    def plotGraph(self, plotter, vertexes=True, edges=True, labels=False, pathExtremes=False, showOnly=[]):
-        if vertexes:
-            for ver in self._graph.nodes():
-                if not showOnly or ver in showOnly:
-                    if (ver != self._startId and ver != self._endId):
-                        plotter.plot([self._graph.node[ver]['coord'][0]], [self._graph.node[ver]['coord'][1]], [self._graph.node[ver]['coord'][2]], 'og')
-                        if labels:
-                                plotter.text(self._graph.node[ver]['coord'][0], self._graph.node[ver]['coord'][1], self._graph.node[ver]['coord'][2], ver, color='red')
-                    elif pathExtremes==True:
-                        plotter.plot([self._graph.node[ver]['coord'][0]], [self._graph.node[ver]['coord'][1]], [self._graph.node[ver]['coord'][2]], 'or')
-                        if labels:
-                                plotter.text(self._graph.node[ver]['coord'][0], self._graph.node[ver]['coord'][1], self._graph.node[ver]['coord'][2], ver, color='red')
+    def plotGraph(self, plotter, verbose=False):
+        if verbose:
+            print('Plot shortest path', flush=True)
 
-        if edges:
-            for edge in self._graph.edges():
-                if not showOnly or (edge[0] in showOnly and edge[1] in showOnly):
-                    if pathExtremes==True or (edge[0] != self._startId and edge[0] != self._endId and edge[1] != self._startId and edge[1] != self._endId):
-                        plotter.plot([self._graph.node[edge[0]]['coord'][0], self._graph.node[edge[1]]['coord'][0]], [self._graph.node[edge[0]]['coord'][1], self._graph.node[edge[1]]['coord'][1]], [self._graph.node[edge[0]]['coord'][2], self._graph.node[edge[1]]['coord'][2]], 'k--')
+        plotter.addGraph(self._graph, plotter.COLOR_GRAPH)
 
     def _segmentIntersectPolyhedrons(self, a, b):
         for polyhedron in self._polyhedrons:

@@ -1,26 +1,27 @@
 #!/usr/bin/python
 
-from mpl_toolkits.mplot3d import  axes3d,Axes3D
 import numpy as np
-import matplotlib.pyplot as plt
 import polyhedron
+import tetrahedron
+import plotter
 
 poly1 = polyhedron.Polyhedron(faces = np.array(
     [
         [[0.,0.,0.],[0.,1.,0.],[1.,0.,0.]],
         [[0.,0.,0.],[0.5,0.5,1.],[0.,1.,0.]],
-        [[0.,0.,0.],[0.5,0.5,1.],[1.,0.,0.]]
+        [[0.,0.,0.],[0.5,0.5,1.],[1.,0.,0.]],
+        [[1.,0.,0.],[0.,1.,0.],[0.5,0.5,1.]]
     ]))
 
-poly2 = polyhedron.Polyhedron(a=[2.,2.,2.], b=[3.,2.,2.], c=[2.5,3.,2.], d=[2.5,2.5,3.])
+poly2 = tetrahedron.Tetrahedron(a=[2.,2.,2.], b=[3.,2.,2.], c=[2.5,3.,2.], d=[2.5,2.5,3.])
 
-fig = plt.figure()
-ax = fig.gca(projection='3d')
+plt = plotter.Plotter()
 
-poly1.plot(ax)
-poly1.plotAllPoints(ax)
+poly1.plot(plt)
+poly1.plotAllPoints(plt)
 
-poly2.plot(ax)
-poly2.plotAllPoints(ax)
+poly2.plot(plt)
+poly2.plotAllPoints(plt)
             
-plt.show()
+plt.draw()
+

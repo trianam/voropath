@@ -1,21 +1,19 @@
 #!/usr/bin/python
 
-from mpl_toolkits.mplot3d import  axes3d,Axes3D
 import numpy as np
-import matplotlib.pyplot as plt
 import voronizator
-import polyhedron
+import tetrahedron
+import plotter
 
 voronoi = voronizator.Voronizator()
 
 maxEmptyArea = 0.1
-poly1 = polyhedron.Polyhedron(a = np.array([0.1,0.1,0.1]), b = np.array([0.1,0.9,0.1]), c = np.array([0.9,0.1,0.1]), d = np.array([0.5,0.5,0.9]), maxEmptyArea=maxEmptyArea)
-poly2 = polyhedron.Polyhedron(a = np.array([-0.5,0.1,0.1]), b = np.array([-0.5,0.9,0.1]), c = np.array([-0.9,0.5,0.1]), d = np.array([-0.5,0.5,1.5]), maxEmptyArea=maxEmptyArea)
-poly3 = polyhedron.Polyhedron(a = np.array([0.5,1.,0.5]), b = np.array([0.7,0.5,0.5]), c = np.array([0.7,0.7,1.]), d = np.array([0.9,0.7,0.5]), maxEmptyArea=maxEmptyArea)
+poly1 = tetrahedron.Tetrahedron(a = np.array([0.1,0.1,0.1]), b = np.array([0.1,0.9,0.1]), c = np.array([0.9,0.1,0.1]), d = np.array([0.5,0.5,0.9]), maxEmptyArea=maxEmptyArea)
+poly2 = tetrahedron.Tetrahedron(a = np.array([-0.5,0.1,0.1]), b = np.array([-0.5,0.9,0.1]), c = np.array([-0.9,0.5,0.1]), d = np.array([-0.5,0.5,1.5]), maxEmptyArea=maxEmptyArea)
+poly3 = tetrahedron.Tetrahedron(a = np.array([0.5,1.,0.5]), b = np.array([0.7,0.5,0.5]), c = np.array([0.7,0.7,1.]), d = np.array([0.9,0.7,0.5]), maxEmptyArea=maxEmptyArea)
 
 
-fig = plt.figure()
-ax = fig.gca(projection='3d')
+plt = plotter.Plotter()
 
 Vs = np.array([0.,0.,0.])
 #Ve = np.array([1.,1.,1.])
@@ -31,23 +29,12 @@ voronoi.makeVoroGraph()
 voronoi.calculateShortestPath(Vs, Ve, 'near')
 #voronoi.calculateShortestPath(Vs, Ve, 'all')
 
-#voronoi.plotSites(ax)
-voronoi.plotPolyhedrons(ax)
-#voronoi.plotGraph(ax, edges=False, labels=True)
-#voronoi.plotGraph(ax, pathExtremes=True)
-voronoi.plotGraph(ax)
-voronoi.plotShortestPath(ax)
+#voronoi.plotSites(plt)
+voronoi.plotPolyhedrons(plt)
+#voronoi.plotGraph(plt, edges=False, labels=True)
+#voronoi.plotGraph(plt, pathExtremes=True)
+voronoi.plotGraph(plt)
+voronoi.plotShortestPath(plt)
 
-ax.set_xlim3d(-1., 2.)
-ax.set_ylim3d(-1., 2.)
-ax.set_zlim3d(-1., 2.)
+plt.draw()
 
-# ax.set_xlim3d(0., 1.)
-# ax.set_ylim3d(0., 1.)
-# ax.set_zlim3d(0., 1.)
-
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-ax.set_zlabel('z')
-
-plt.show()

@@ -13,16 +13,14 @@ if len(sys.argv) >= 2:
     voronoi = record['voronoi']
 
     print('Build renderer, window and interactor', flush=True)
-    plotter = plotter.Plotter()
+    plt = plotter.Plotter()
     
-    voronoi.plotPolyhedrons(plotter, verbose = True)
-    voronoi.plotSites(plotter, verbose = True)
-    #voronoi.plotGraph(ax, edges=False, labels=True)
-    #voronoi.plotGraph(ax, pathExtremes=True)
-    #voronoi.plotGraph(ax)
+    voronoi.plotPolyhedrons(plt, verbose = True)
+    voronoi.plotSites(plt, verbose = True)
+    #voronoi.plotGraph(plt, verbose = True)
 
     print('Render', flush=True)
-    plotter.draw()
+    plt.draw()
     
 else:
     print('use: {} sceneFile'.format(sys.argv[0]))

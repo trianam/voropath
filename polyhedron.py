@@ -1,6 +1,5 @@
 import numpy as np
 import math
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 class Polyhedron:
     def __init__(self, faces, invisible=False, distributePoints=True, maxEmptyArea=0.1):
@@ -59,11 +58,6 @@ class Polyhedron:
                 triangles.append(np.array([ca,a,abc]))
 
         self.allPoints = np.array(allPoints)
-
-    
-    def plotAllPoints(self, plotter):
-        if self.allPoints.size > 0:
-            plotter.plot(self.allPoints[:,0], self.allPoints[:,1], self.allPoints[:,2], 'ob')
 
     def intersectSegment(self, a, b):
         for triangle in self._faces:
@@ -138,9 +132,10 @@ class Polyhedron:
         return intersect,result
                 
                     
+    def plotAllPoints(self, plotter):
+        if self.allPoints.size > 0:
+            plotter.addPoints(self.allPoints, plotter.COLOR_SITES)
+
     def plot(self, plotter):
         if self._invisible == False:
-            col = Poly3DCollection(self._faces)
-            col.set_color('y')
-            col.set_edgecolor('k')
-            plotter.add_collection3d(col)
+            plotter.addTriangles(self._faces, plotter.COLOR_OBSTACLE)

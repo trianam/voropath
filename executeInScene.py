@@ -26,17 +26,15 @@ if len(sys.argv) >= 2:
     voronoi.calculateShortestPath(startPoint, endPoint, 'near', postSimplify=False, verbose=True, debug=False)
 
     print('Build renderer, window and interactor', flush=True)
-    plotter = plotter.Plotter()
+    plt = plotter.Plotter()
     
-    #voronoi.plotSites(plotter, verbose = True)
-    voronoi.plotPolyhedrons(plotter, verbose = True)
-    #voronoi.plotGraph(plotter, edges=False, labels=True)
-    #voronoi.plotGraph(plotter, pathExtremes=True)
-    #voronoi.plotGraph(plotter)
-    voronoi.plotShortestPath(plotter, verbose = True)
+    #voronoi.plotSites(plt, verbose = True)
+    voronoi.plotPolyhedrons(plt, verbose = True)
+    voronoi.plotGraph(plt, verbose = True)
+    voronoi.plotShortestPath(plt, verbose = True)
 
     print('Render', flush=True)
-    plotter.draw()
+    plt.draw()
 
 else:
     print('use: {} sceneFile [startPoint endPoint]'.format(sys.argv[0]))

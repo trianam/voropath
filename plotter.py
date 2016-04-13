@@ -9,6 +9,8 @@ class Plotter:
     COLOR_OBSTACLE = vtk.util.colors.banana
     COLOR_SITES = vtk.util.colors.cobalt
     COLOR_PATH = vtk.util.colors.brick
+    COLOR_CONTROL_POLIG = vtk.util.colors.mint
+    COLOR_GRAPH = vtk.util.colors.sepia
 
     def __init__(self):
         self._renderer = vtk.vtkRenderer()
@@ -26,15 +28,63 @@ class Plotter:
         self._renderWindowInteractor.Start()
 
     def addTetrahedron(self, vertexes, color):
-        points = vtk.vtkPoints()
-        points.InsertNextPoint(vertexes[0][0], vertexes[0][1], vertexes[0][2])
-        points.InsertNextPoint(vertexes[1][0], vertexes[1][1], vertexes[1][2])
-        points.InsertNextPoint(vertexes[2][0], vertexes[2][1], vertexes[2][2])
-        points.InsertNextPoint(vertexes[3][0], vertexes[3][1], vertexes[3][2])
+        vtkPoints = vtk.vtkPoints()
+        vtkPoints.InsertNextPoint(vertexes[0][0], vertexes[0][1], vertexes[0][2])
+        vtkPoints.InsertNextPoint(vertexes[1][0], vertexes[1][1], vertexes[1][2])
+        vtkPoints.InsertNextPoint(vertexes[2][0], vertexes[2][1], vertexes[2][2])
+        vtkPoints.InsertNextPoint(vertexes[3][0], vertexes[3][1], vertexes[3][2])
 
         unstructuredGrid = vtk.vtkUnstructuredGrid()
-        unstructuredGrid.SetPoints(points)
+        unstructuredGrid.SetPoints(vtkPoints)
         unstructuredGrid.InsertNextCell(vtk.VTK_TETRA, 4, [0,1,2,3])
+
+        mapper = vtk.vtkDataSetMapper()
+        mapper.SetInputData(unstructuredGrid)
+
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        actor.GetProperty().SetColor(color)
+
+        self._renderer.AddActor(actor)
+
+    def addTriangles(self, triangles, color):
+        vtkPoints = vtk.vtkPoints()
+        idPoint = 0
+        allIdsTriangle = []
+
+        for triangle in triangles:
+            idsTriangle = []
+
+            for point in triangle:
+                vtkPoints.InsertNextPoint(point[0], point[1], point[2])
+                idsTriangle.append(idPoint)
+                idPoint += 1
+
+            allIdsTriangle.append(idsTriangle)
+
+        unstructuredGrid = vtk.vtkUnstructuredGrid()
+        unstructuredGrid.SetPoints(vtkPoints)
+        for idsTriangle in allIdsTriangle:
+            unstructuredGrid.InsertNextCell(vtk.VTK_TRIANGLE, 3, idsTriangle)
+
+        mapper = vtk.vtkDataSetMapper()
+        mapper.SetInputData(unstructuredGrid)
+
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        actor.GetProperty().SetColor(color)
+
+        self._renderer.AddActor(actor)
+
+    def addPolyLine(self, points, color):
+        vtkPoints = vtk.vtkPoints()
+        for point in points:
+            vtkPoints.InsertNextPoint(point[0], point[1], point[2])
+
+        unstructuredGrid = vtk.vtkUnstructuredGrid()
+        unstructuredGrid.SetPoints(vtkPoints)
+        for i in range(1, len(points)):
+            unstructuredGrid.InsertNextCell(vtk.VTK_LINE, 2, [i-1, i])
 
         mapper = vtk.vtkDataSetMapper()
         mapper.SetInputData(unstructuredGrid)
@@ -95,3 +145,28 @@ class Plotter:
         z_i = sp.interpolate.splev(ipl_t, z_list)
 
         self.addPoints(zip(x_i, y_i, z_i), color)
+
+    def addGraph(self, graph, color):
+        vtkPoints = vtk.vtkPoints()
+        vtkId = 0
+        graph2VtkId = {}
+        
+        for node in graph.nodes():
+            vtkPoints.InsertNextPoint(graph.node[node]['coord'][0], graph.node[node]['coord'][1], graph.node[node]['coord'][2])
+            graph2VtkId[node] = vtkId
+            vtkId += 1
+            
+        unstructuredGrid = vtk.vtkUnstructuredGrid()
+        unstructuredGrid.SetPoints(vtkPoints)
+
+        for edge in graph.edges():
+            unstructuredGrid.InsertNextCell(vtk.VTK_LINE, 2, [graph2VtkId[edge[0]], graph2VtkId[edge[1]]])
+
+        mapper = vtk.vtkDataSetMapper()
+        mapper.SetInputData(unstructuredGrid)
+
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        actor.GetProperty().SetColor(color)
+
+        self._renderer.AddActor(actor)
