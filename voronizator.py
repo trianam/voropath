@@ -2,7 +2,6 @@ import numpy as np
 import numpy.linalg
 import scipy as sp
 import scipy.spatial
-import scipy.interpolate
 import networkx as nx
 import numpy.linalg
 import polyhedron
@@ -37,7 +36,10 @@ class Voronizator:
     def addPolyhedron(self, polyhedron):
         self._polyhedrons.append(polyhedron)
 
-    def addBoundingBox(self, a, b, maxEmptyArea=1, invisible=True):
+    def addBoundingBox(self, a, b, maxEmptyArea=1, invisible=True, verbose=False):
+        if verbose:
+            print('Add bounding box', flush=True)
+
         c = [a[0], b[1], a[2]]
         d = [b[0], a[1], a[2]]
         e = [a[0], a[1], b[2]]
@@ -50,14 +52,17 @@ class Voronizator:
             [h,a,e],[h,c,a],[e,h,g],[h,b,g],[a,d,f],[a,f,c]
             ]), invisible=invisible, maxEmptyArea=maxEmptyArea))
 
-    def setPolyhedronsSites(self):
+    def setPolyhedronsSites(self, verbose=False):
+        if verbose:
+            print('Set sites for Voronoi', flush=True)
+
         sites = []
         for polyhedron in self._polyhedrons:
             sites.extend(polyhedron.allPoints)
 
         self._sites = np.array(sites)
 
-    def makeVoroGraph(self, prune=True, verbose=True, debug=False):
+    def makeVoroGraph(self, prune=True, verbose=False, debug=False):
         if verbose:
             print('Calculate Voronoi cells', flush=True)
         ids = {}
@@ -118,50 +123,31 @@ class Voronizator:
         triPath = self._trijkstra(verbose, debug)
         self._shortestPath = self._extractPath(triPath, postSimplify, verbose, debug)
 
-    def plotSites(self, plotter):
+    def plotSites(self, plotter, verbose=False):
+        if verbose:
+            print('Plot Sites', end='', flush=True)
+            
         if self._sites.size > 0:
-            plotter.plot(self._sites[:,0], self._sites[:,1], self._sites[:,2], 'o')
+            plotter.addPoints(self._sites, plotter.COLOR_SITES)
 
-    def plotPolyhedrons(self, plotter):
+    def plotPolyhedrons(self, plotter, verbose=False):
+        if verbose:
+            print('Plot Polyhedrons', end='', flush=True)
+            
         for poly in self._polyhedrons:
             poly.plot(plotter)
+            if verbose:
+                print('.', end='', flush=True)
 
-    def plotShortestPath(self, plotter):
+        if verbose:
+            print('', flush=True)
+
+    def plotShortestPath(self, plotter, verbose=False):
+        if verbose:
+            print('Plot shortest path', end='', flush=True)
+            
         if self._shortestPath.size > 0:
-            x = self._shortestPath[:,0]
-            y = self._shortestPath[:,1]
-            z = self._shortestPath[:,2]
-
-            t = range(len(self._shortestPath))
-            ipl_t = np.linspace(0.0, len(self._shortestPath) - 1, 1000)
-            #TODO: find a better way to substitute 100 above
-            x_tup = sp.interpolate.splrep(t, x, k = self._bsplineDegree+1)
-            y_tup = sp.interpolate.splrep(t, y, k = self._bsplineDegree+1)
-            z_tup = sp.interpolate.splrep(t, z, k = self._bsplineDegree+1)
-
-            x_list = list(x_tup)
-            xl = x.tolist()
-            x_list[1] = xl + [0.0, 0.0, 0.0, 0.0]
-
-            y_list = list(y_tup)
-            yl = y.tolist()
-            y_list[1] = yl + [0.0, 0.0, 0.0, 0.0]
-
-            z_list = list(z_tup)
-            zl = z.tolist()
-            z_list[1] = zl + [0.0, 0.0, 0.0, 0.0]
-
-            x_i = sp.interpolate.splev(ipl_t, x_list)
-            y_i = sp.interpolate.splev(ipl_t, y_list)
-            z_i = sp.interpolate.splev(ipl_t, z_list)
-
-            plotter.plot(x, y, z, 'r--')
-            plotter.plot(x_i, y_i, z_i, 'r', lw=2)
-            plotter.plot(x, y, z, 'ro')
-        # if self._pathStart.size > 0:
-        #     plotter.plot([self._pathStart[0]], [self._pathStart[1]], [self._pathStart[2]], 'ro')
-        # if self._pathEnd.size > 0:
-        #     plotter.plot([self._pathEnd[0]], [self._pathEnd[1]], [self._pathEnd[2]], 'ro')
+            plotter.addBSpline(self._shortestPath, self._bsplineDegree, plotter.COLOR_PATH)
 
     def plotGraph(self, plotter, vertexes=True, edges=True, labels=False, pathExtremes=False, showOnly=[]):
         if vertexes:

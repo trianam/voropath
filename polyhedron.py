@@ -3,39 +3,16 @@ import math
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 class Polyhedron:
-    def __init__(self, **pars):
+    def __init__(self, faces, invisible=False, distributePoints=True, maxEmptyArea=0.1):
         """
         can be composed only by combined triangles
-        pars can be one of:
-           faces -> an np.array of triangular faces
-           a,b,c,d -> lists of the four vertexes of a tetrahedron
+        faces -> an np.array of triangular faces
         if invisible=True when plot will be called it will be useless
         """
-        if 'maxEmptyArea' in pars:
-            maxEmptyArea = pars['maxEmptyArea']
-        else:
-            maxEmptyArea = 0.1
-
-        if 'faces' in pars:
-            self._faces = pars['faces']
-        elif 'a' in pars and 'b' in pars and 'c' in pars and 'd' in pars:
-            a = pars['a']
-            b = pars['b']
-            c = pars['c']
-            d = pars['d']
-            self._faces = np.array([
-                [a,b,c],
-                [a,b,d],
-                [b,c,d],
-                [c,a,d]
-            ])
-
-        if 'invisible' in pars:
-            self._invisible = pars['invisible']
-        else:
-            self._invisible = False
+        self._faces = faces
+        self._invisible = invisible
             
-        if (not 'distributePoints' in pars) or (pars['distributePoints'] == True):
+        if distributePoints:
             self.distributePoints(maxEmptyArea)
         else:
             self.allPoints = np.array([])

@@ -6,7 +6,7 @@ import random
 import math
 import pickle
 import voronizator
-import polyhedron
+import tetrahedron
 
 if len(sys.argv) >= 13 and len(sys.argv) <= 14:
     i = 1
@@ -79,7 +79,7 @@ for ob in range(numObstacles):
                 radius*math.cos(elev)*math.sin(azim),
                 radius*math.sin(elev)])]
 
-        newObstacle = polyhedron.Polyhedron(a = points[0], b = points[1], c = points[2], d = points[3], distributePoints = True, maxEmptyArea = maxEmptyArea)
+        newObstacle = tetrahedron.Tetrahedron(a = points[0], b = points[1], c = points[2], d = points[3], distributePoints = True, maxEmptyArea = maxEmptyArea)
 
         ok = True
         if avoidCollisions:
@@ -95,12 +95,10 @@ for ob in range(numObstacles):
 
     print(' done', flush=True)
 
-print('Add bounding box', flush=True)
-voronoi.addBoundingBox([minX, minY, minZ], [maxX, maxY, maxZ], maxEmptyArea)
+voronoi.addBoundingBox([minX, minY, minZ], [maxX, maxY, maxZ], maxEmptyArea, verbose=True)
 
-print('Set sites for Voronoi', flush=True)
-voronoi.setPolyhedronsSites()
-voronoi.makeVoroGraph()
+voronoi.setPolyhedronsSites(verbose=True)
+voronoi.makeVoroGraph(verbose=True)
 
 print('Write file', flush=True)
 record = {}
