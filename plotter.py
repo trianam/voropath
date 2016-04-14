@@ -20,9 +20,25 @@ class Plotter:
         self._renderWindow.AddRenderer(self._renderer)
         self._renderWindowInteractor = vtk.vtkRenderWindowInteractor()
         self._renderWindowInteractor.SetRenderWindow(self._renderWindow)
+        self._interactorStyle = vtk.vtkInteractorStyleUnicam()
 
     def draw(self):
         self._renderWindowInteractor.Initialize()
+        self._renderWindowInteractor.SetInteractorStyle(self._interactorStyle)
+
+        axes = vtk.vtkAxesActor()
+        widget = vtk.vtkOrientationMarkerWidget()
+        widget.SetOutlineColor(0.9300, 0.5700, 0.1300)
+        widget.SetOrientationMarker(axes)
+        widget.SetInteractor(self._renderWindowInteractor)
+        widget.SetViewport(0.0, 0.0, 0.1, 0.1)
+        widget.SetEnabled(True)
+        widget.InteractiveOn()
+
+        self._renderer.ResetCamera()
+        camPos = self._renderer.GetActiveCamera().GetPosition()
+        self._renderer.GetActiveCamera().SetPosition((camPos[2],camPos[1],camPos[0]))
+        self._renderer.GetActiveCamera().SetViewUp((0.0,0.0,1.0))
 
         self._renderWindow.Render()
         self._renderWindowInteractor.Start()
