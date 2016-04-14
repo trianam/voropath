@@ -21,6 +21,7 @@ class Voronizator:
         self._startId = uuid.uuid4()
         self._endId = uuid.uuid4()
         self._bsplineDegree = bsplineDegree
+        self._hasBoundingBox = False
 
     def setBsplineDegree(self, bsplineDegree):
         self._bsplineDegree = bsplineDegree
@@ -39,6 +40,10 @@ class Voronizator:
     def addBoundingBox(self, a, b, maxEmptyArea=1, invisible=True, verbose=False):
         if verbose:
             print('Add bounding box', flush=True)
+
+        self._hasBoundingBox = True
+        self._boundingBoxA = a
+        self._boundingBoxB = b
 
         c = [a[0], b[1], a[2]]
         d = [b[0], a[1], a[2]]
@@ -147,8 +152,8 @@ class Voronizator:
             print('Plot shortest path', flush=True)
             
         if self._shortestPath.size > 0:
-            plotter.addPolyLine(self._shortestPath, plotter.COLOR_CONTROL_POLIG)
-            plotter.addBSpline(self._shortestPath, self._bsplineDegree, plotter.COLOR_PATH)
+            plotter.addPolyLine(self._shortestPath, plotter.COLOR_CONTROL_POLIG, thick=False)
+            plotter.addBSpline(self._shortestPath, self._bsplineDegree, plotter.COLOR_PATH, thick=False)
 
     def plotGraph(self, plotter, verbose=False):
         if verbose:
@@ -157,10 +162,18 @@ class Voronizator:
         plotter.addGraph(self._graph, plotter.COLOR_GRAPH)
 
     def _segmentIntersectPolyhedrons(self, a, b):
-        for polyhedron in self._polyhedrons:
-            if polyhedron.intersectSegment(a,b)[0]:
-                return True
-        return False
+        intersect = False
+        if self._hasBoundingBox:
+            if((a<self._boundingBoxA).any() or (a>self._boundingBoxB).any() or (b<self._boundingBoxA).any() or (b>self._boundingBoxB).any()):
+                intersect = True
+
+        if not intersect:
+            for polyhedron in self._polyhedrons:
+                if polyhedron.intersectSegment(a,b)[0]:
+                    intersect = True
+                    break
+                    
+        return intersect
 
     def _triangleIntersectPolyhedrons(self, a, b, c):
         triangle = polyhedron.Polyhedron(faces=np.array([[a,b,c]]), distributePoints = False)

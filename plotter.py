@@ -12,6 +12,8 @@ class Plotter:
     COLOR_CONTROL_POLIG = vtk.util.colors.mint
     COLOR_GRAPH = vtk.util.colors.sepia
 
+    _DEFAULT_THICKNESS = 0.1
+
     def __init__(self):
         self._renderer = vtk.vtkRenderer()
         self._renderer.SetBackground(self.COLOR_BG)
@@ -92,18 +94,37 @@ class Plotter:
 
         self._renderer.AddActor(actor)
 
-    def addPolyLine(self, points, color):
+    def addPolyLine(self, points, color, thick=False, thickness=_DEFAULT_THICKNESS):
         vtkPoints = vtk.vtkPoints()
         for point in points:
             vtkPoints.InsertNextPoint(point[0], point[1], point[2])
 
-        unstructuredGrid = vtk.vtkUnstructuredGrid()
-        unstructuredGrid.SetPoints(vtkPoints)
-        for i in range(1, len(points)):
-            unstructuredGrid.InsertNextCell(vtk.VTK_LINE, 2, [i-1, i])
+        if thick:
+            cellArray = vtk.vtkCellArray()
+            cellArray.InsertNextCell(4)
+            for i in range(len(points)):
+                cellArray.InsertCellPoint(i)
 
-        mapper = vtk.vtkDataSetMapper()
-        mapper.SetInputData(unstructuredGrid)
+            polyData = vtk.vtkPolyData()
+            polyData.SetPoints(vtkPoints)
+            polyData.SetLines(cellArray)
+
+            tubeFilter = vtk.vtkTubeFilter()
+            tubeFilter.SetNumberOfSides(8)
+            tubeFilter.SetInputData(polyData)
+            tubeFilter.SetRadius(thickness)
+
+            mapper = vtk.vtkPolyDataMapper()
+            mapper.SetInputConnection(tubeFilter.GetOutputPort())
+
+        else:
+            unstructuredGrid = vtk.vtkUnstructuredGrid()
+            unstructuredGrid.SetPoints(vtkPoints)
+            for i in range(1, len(points)):
+                unstructuredGrid.InsertNextCell(vtk.VTK_LINE, 2, [i-1, i])
+
+            mapper = vtk.vtkDataSetMapper()
+            mapper.SetInputData(unstructuredGrid)
 
         actor = vtk.vtkActor()
         actor.SetMapper(mapper)
@@ -132,7 +153,7 @@ class Plotter:
 
         self._renderer.AddActor(actor)
 
-    def addBSpline(self, controlPolygon, degree, color):
+    def addBSpline(self, controlPolygon, degree, color, thick=False, thickness=_DEFAULT_THICKNESS):
         x = controlPolygon[:,0]
         y = controlPolygon[:,1]
         z = controlPolygon[:,2]
@@ -160,7 +181,7 @@ class Plotter:
         y_i = sp.interpolate.splev(ipl_t, y_list)
         z_i = sp.interpolate.splev(ipl_t, z_list)
 
-        self.addPoints(zip(x_i, y_i, z_i), color)
+        self.addPolyLine(list(zip(x_i, y_i, z_i)), color, thick, thickness)
 
     def addGraph(self, graph, color):
         vtkPoints = vtk.vtkPoints()

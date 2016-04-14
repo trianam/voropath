@@ -17,7 +17,7 @@ if len(sys.argv) >= 2:
     
     voronoi.plotPolyhedrons(plt, verbose = True)
     voronoi.plotSites(plt, verbose = True)
-    #voronoi.plotGraph(plt, verbose = True)
+    voronoi.plotGraph(plt, verbose = True)
 
     print('Render', flush=True)
     plt.draw()

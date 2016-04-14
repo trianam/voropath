@@ -30,7 +30,7 @@ if len(sys.argv) >= 2:
     
     #voronoi.plotSites(plt, verbose = True)
     voronoi.plotPolyhedrons(plt, verbose = True)
-    voronoi.plotGraph(plt, verbose = True)
+    #voronoi.plotGraph(plt, verbose = True)
     voronoi.plotShortestPath(plt, verbose = True)
 
     print('Render', flush=True)
