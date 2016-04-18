@@ -9,6 +9,7 @@ class Plotter:
     COLOR_OBSTACLE = vtk.util.colors.banana
     COLOR_SITES = vtk.util.colors.cobalt
     COLOR_PATH = vtk.util.colors.brick
+    COLOR_CONTROL_POINTS = vtk.util.colors.tomato
     COLOR_CONTROL_POLIG = vtk.util.colors.mint
     COLOR_GRAPH = vtk.util.colors.sepia
 
@@ -132,7 +133,7 @@ class Plotter:
 
         self._renderer.AddActor(actor)
 
-    def addPoints(self, points, color):
+    def addPoints(self, points, color, thick=False, thickness=_DEFAULT_THICKNESS):
         vtkPoints = vtk.vtkPoints()
         for point in points:
             vtkPoints.InsertNextPoint(point[0], point[1], point[2])
@@ -140,12 +141,24 @@ class Plotter:
         pointsPolyData = vtk.vtkPolyData()
         pointsPolyData.SetPoints(vtkPoints)
 
-        vertexFilter = vtk.vtkVertexGlyphFilter()
-        vertexFilter.SetInputData(pointsPolyData)
-        vertexFilter.Update()                          
+        if thick:
+            sphereSource = vtk.vtkSphereSource()
+            sphereSource.SetRadius(thickness)
+            
+            glyph3D = vtk.vtkGlyph3D()
+            glyph3D.SetSourceConnection(sphereSource.GetOutputPort())
+            glyph3D.SetInputData(pointsPolyData)
+            glyph3D.Update()
+ 
+            mapper = vtk.vtkPolyDataMapper()
+            mapper.SetInputConnection(glyph3D.GetOutputPort())
+        else:
+            vertexFilter = vtk.vtkVertexGlyphFilter()
+            vertexFilter.SetInputData(pointsPolyData)
+            vertexFilter.Update()                          
 
-        mapper = vtk.vtkPolyDataMapper()
-        mapper.SetInputData(vertexFilter.GetOutput())
+            mapper = vtk.vtkPolyDataMapper()
+            mapper.SetInputData(vertexFilter.GetOutput())
 
         actor = vtk.vtkActor()
         actor.SetMapper(mapper)

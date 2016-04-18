@@ -133,7 +133,7 @@ class Voronizator:
             print('Plot Sites', end='', flush=True)
             
         if self._sites.size > 0:
-            plotter.addPoints(self._sites, plotter.COLOR_SITES)
+            plotter.addPoints(self._sites, plotter.COLOR_SITES, thick=True)
 
     def plotPolyhedrons(self, plotter, verbose=False):
         if verbose:
@@ -153,6 +153,7 @@ class Voronizator:
             
         if self._shortestPath.size > 0:
             plotter.addPolyLine(self._shortestPath, plotter.COLOR_CONTROL_POLIG, thick=False)
+            plotter.addPoints(self._shortestPath, plotter.COLOR_CONTROL_POINTS, thick=True)
             plotter.addBSpline(self._shortestPath, self._bsplineDegree, plotter.COLOR_PATH, thick=False)
 
     def plotGraph(self, plotter, verbose=False):
