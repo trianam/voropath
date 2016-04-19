@@ -13,7 +13,9 @@ class Plotter:
     COLOR_CONTROL_POLIG = vtk.util.colors.mint
     COLOR_GRAPH = vtk.util.colors.sepia
 
-    _DEFAULT_THICKNESS = 0.1
+    _DEFAULT_LINE_THICKNESS = 0.05
+    _DEFAULT_POINT_THICKNESS = 0.1
+    _DEFAULT_BSPLINE_THICKNESS = 0.1
 
     def __init__(self):
         self._renderer = vtk.vtkRenderer()
@@ -95,14 +97,14 @@ class Plotter:
 
         self._renderer.AddActor(actor)
 
-    def addPolyLine(self, points, color, thick=False, thickness=_DEFAULT_THICKNESS):
+    def addPolyLine(self, points, color, thick=False, thickness=_DEFAULT_LINE_THICKNESS):
         vtkPoints = vtk.vtkPoints()
         for point in points:
             vtkPoints.InsertNextPoint(point[0], point[1], point[2])
 
         if thick:
             cellArray = vtk.vtkCellArray()
-            cellArray.InsertNextCell(4)
+            cellArray.InsertNextCell(len(points))
             for i in range(len(points)):
                 cellArray.InsertCellPoint(i)
 
@@ -114,6 +116,7 @@ class Plotter:
             tubeFilter.SetNumberOfSides(8)
             tubeFilter.SetInputData(polyData)
             tubeFilter.SetRadius(thickness)
+            tubeFilter.Update()
 
             mapper = vtk.vtkPolyDataMapper()
             mapper.SetInputConnection(tubeFilter.GetOutputPort())
@@ -133,7 +136,7 @@ class Plotter:
 
         self._renderer.AddActor(actor)
 
-    def addPoints(self, points, color, thick=False, thickness=_DEFAULT_THICKNESS):
+    def addPoints(self, points, color, thick=False, thickness=_DEFAULT_POINT_THICKNESS):
         vtkPoints = vtk.vtkPoints()
         for point in points:
             vtkPoints.InsertNextPoint(point[0], point[1], point[2])
@@ -166,7 +169,7 @@ class Plotter:
 
         self._renderer.AddActor(actor)
 
-    def addBSpline(self, controlPolygon, degree, color, thick=False, thickness=_DEFAULT_THICKNESS):
+    def addBSpline(self, controlPolygon, degree, color, thick=False, thickness=_DEFAULT_BSPLINE_THICKNESS):
         x = controlPolygon[:,0]
         y = controlPolygon[:,1]
         z = controlPolygon[:,2]
