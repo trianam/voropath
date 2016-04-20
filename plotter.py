@@ -57,7 +57,7 @@ class Plotter:
 
         unstructuredGrid = vtk.vtkUnstructuredGrid()
         unstructuredGrid.SetPoints(vtkPoints)
-        unstructuredGrid.InsertNextCell(vtk.VTK_TETRA, 4, [0,1,2,3])
+        unstructuredGrid.InsertNextCell(vtk.VTK_TETRA, 4, range(4))
 
         mapper = vtk.vtkDataSetMapper()
         mapper.SetInputData(unstructuredGrid)
