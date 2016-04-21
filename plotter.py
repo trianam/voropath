@@ -1,11 +1,13 @@
 import numpy as np
 import scipy as sp
 import scipy.interpolate
+import scipy.spatial
 import vtk
 import vtk.util.colors
 
 class Plotter:
-    COLOR_BG = vtk.util.colors.ivory
+    COLOR_BG = vtk.util.colors.light_grey
+    #vtk.util.colors.ivory
     COLOR_OBSTACLE = vtk.util.colors.banana
     COLOR_SITES = vtk.util.colors.cobalt
     COLOR_PATH = vtk.util.colors.brick
@@ -174,12 +176,38 @@ class Plotter:
         y = controlPolygon[:,1]
         z = controlPolygon[:,2]
 
+        polLen = 0.
+        for i in range(1, len(controlPolygon)):
+            polLen += sp.spatial.distance.euclidean(controlPolygon[i-1], controlPolygon[i])
+
+        l = len(x)
+        t = np.linspace(0,1,l-degree+1,endpoint=True)
+        t = np.append([0]*degree,t)
+        t = np.append(t,[1]*degree)
+
+        #[knots, coeff, degree]
+        tck = [t,[x,y,z], degree]
+
+        u=np.linspace(0,1,(max(polLen*100,100)),endpoint=True)
+        out = sp.interpolate.splev(u, tck)
+
+        self.addPolyLine(list(zip(out[0], out[1], out[2])), color, thick, thickness)
+
+    def addBSplineDEPRECATED(self, controlPolygon, degree, color, thick=False, thickness=_DEFAULT_BSPLINE_THICKNESS):
+        x = controlPolygon[:,0]
+        y = controlPolygon[:,1]
+        z = controlPolygon[:,2]
+    
+        polLen = 0.
+        for i in range(1, len(controlPolygon)):
+            polLen += sp.spatial.distance.euclidean(controlPolygon[i-1], controlPolygon[i])
+
         t = range(len(controlPolygon))
-        ipl_t = np.linspace(0.0, len(controlPolygon) - 1, 1000)
-        #TODO: find a better way to substitute 1000 above
-        x_tup = sp.interpolate.splrep(t, x, k = degree + 1)
-        y_tup = sp.interpolate.splrep(t, y, k = degree + 1)
-        z_tup = sp.interpolate.splrep(t, z, k = degree + 1)
+        ipl_t = np.linspace(0.0, len(controlPolygon) - 1, max(polLen*100,100))
+
+        x_tup = sp.interpolate.splrep(t, x, k = degree)
+        y_tup = sp.interpolate.splrep(t, y, k = degree)
+        z_tup = sp.interpolate.splrep(t, z, k = degree)
 
         x_list = list(x_tup)
         xl = x.tolist()
