@@ -6,6 +6,7 @@ import networkx as nx
 import numpy.linalg
 import polyhedron
 import uuid
+import xml.etree.cElementTree as ET
 
 class Voronizator:
     def __init__(self, sites=np.array([]), bsplineDegree=4):
@@ -56,6 +57,7 @@ class Voronizator:
             [a,g,e],[a,d,g],[d,f,g],[f,b,g],[f,b,h],[f,h,c],
             [h,a,e],[h,c,a],[e,h,g],[h,b,g],[a,d,f],[a,f,c]
             ]), invisible=invisible, maxEmptyArea=maxEmptyArea))
+
 
     def setPolyhedronsSites(self, verbose=False):
         if verbose:
@@ -162,6 +164,14 @@ class Voronizator:
 
         plotter.addGraph(self._graph, plotter.COLOR_GRAPH)
 
+    def extractXmlTree(self, root):
+        if self._hasBoundingBox:
+            xmlBoundingBox = ET.SubElement(root, 'boundingBox', a=str(self._boundingBoxA), b=str(self._boundingBoxB))
+
+        xmlPolyhedrons = ET.SubElement(root, 'polyhedrons')
+        for polyhedron in self._polyhedrons:
+            xmlPolyhedron = polyhedron.extractXmlTree(xmlPolyhedrons)
+        
     def _segmentIntersectPolyhedrons(self, a, b):
         intersect = False
         if self._hasBoundingBox:

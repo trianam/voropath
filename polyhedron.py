@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import xml.etree.cElementTree as ET
 
 class Polyhedron:
     def __init__(self, faces, invisible=False, distributePoints=True, maxEmptyArea=0.1):
@@ -139,3 +140,11 @@ class Polyhedron:
     def plot(self, plotter):
         if self._invisible == False:
             plotter.addTriangles(self._faces, plotter.COLOR_OBSTACLE)
+
+    def extractXmlTree(self, root):
+        xmlPolyhedron = ET.SubElement(root, 'polyhedron', invisible=str(self._invisible))
+        for face in self._faces:
+            xmlFace = ET.SubElement(xmlPolyhedron, 'face')
+            for vertex in face:
+                xmlVertex = ET.SubElement(xmlFace, 'vertex', x=str(vertex[0]), y=str(vertex[1]), z=str(vertex[2]))
+
