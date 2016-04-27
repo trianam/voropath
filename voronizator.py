@@ -166,12 +166,42 @@ class Voronizator:
 
     def extractXmlTree(self, root):
         if self._hasBoundingBox:
-            xmlBoundingBox = ET.SubElement(root, 'boundingBox', a=str(self._boundingBoxA), b=str(self._boundingBoxB))
+            xmlBoundingBox = ET.SubElement(root, 'boundingBox')
+            ET.SubElement(xmlBoundingBox, 'a', x=str(self._boundingBoxA[0]), y=str(self._boundingBoxA[1]), z=str(self._boundingBoxA[2]))
+            ET.SubElement(xmlBoundingBox, 'b', x=str(self._boundingBoxB[0]), y=str(self._boundingBoxB[1]), z=str(self._boundingBoxB[2]))
 
         xmlPolyhedrons = ET.SubElement(root, 'polyhedrons')
         for polyhedron in self._polyhedrons:
             xmlPolyhedron = polyhedron.extractXmlTree(xmlPolyhedrons)
-        
+
+    def importXmlTree(self, root, maxEmptyArea):
+        xmlBoundingBox = root.find('boundingBox')
+        if xmlBoundingBox:
+            xmlA = xmlBoundingBox.find('a')
+            xmlB = xmlBoundingBox.find('b')
+            
+            self._hasBoundingBox = True
+            self._boundingBoxA = [float(xmlA.attrib['x']), float(xmlA.attrib['y']), float(xmlA.attrib['z'])]
+            self._boundingBoxB = [float(xmlB.attrib['x']), float(xmlB.attrib['y']), float(xmlB.attrib['z'])]
+
+        xmlPolyhedrons = root.find('polyhedrons')
+        if xmlPolyhedrons:
+            for xmlPolyhedron in xmlPolyhedrons.iter('polyhedron'):
+                invisible = False
+                if 'invisible' in xmlPolyhedron.attrib.keys():
+                    invisible = bool(eval(xmlPolyhedron.attrib['invisible']))
+
+                faces = []
+                for xmlFace in xmlPolyhedron.iter('face'):
+                    vertexes = []
+                    for xmlVertex in xmlFace.iter('vertex'):
+                        vertexes.append([float(xmlVertex.attrib['x']), float(xmlVertex.attrib['y']), float(xmlVertex.attrib['z'])])
+
+                    faces.append(vertexes)
+
+                newPolyhedron = polyhedron.Polyhedron(faces=np.array(faces), invisible=invisible, maxEmptyArea=maxEmptyArea)
+                self.addPolyhedron(newPolyhedron)
+
     def _segmentIntersectPolyhedrons(self, a, b):
         intersect = False
         if self._hasBoundingBox:

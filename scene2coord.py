@@ -4,7 +4,7 @@ import sys
 import pickle
 import xml.etree.cElementTree as ET
 
-if len(sys.argv) >= 3:
+if len(sys.argv) == 3:
 
     print('Load file', flush=True)
     with open(sys.argv[1], 'rb') as f:
