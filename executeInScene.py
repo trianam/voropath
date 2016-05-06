@@ -28,7 +28,6 @@ if len(sys.argv) >= 2:
     voronoi = record['voronoi']
     voronoi.setBsplineDegree(bsplineDegree)
 
-    print('Calculate shortest path', flush=True)
     voronoi.calculateShortestPath(startPoint, endPoint, 'near', postSimplify=postSimplify, verbose=True, debug=False)
 
     print('Build renderer, window and interactor', flush=True)

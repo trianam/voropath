@@ -4,6 +4,9 @@ import scipy.interpolate
 import scipy.spatial
 import vtk
 import vtk.util.colors
+import math
+import warnings
+warnings.filterwarnings("error")
 
 class Plotter:
     COLOR_BG = vtk.util.colors.light_grey
@@ -190,8 +193,116 @@ class Plotter:
 
         u=np.linspace(0,1,(max(polLen*100,100)),endpoint=True)
         out = sp.interpolate.splev(u, tck)
+        outD1 = sp.interpolate.splev(u, tck, 1)
+        outD2 = sp.interpolate.splev(u, tck, 2)
+        outD3 = sp.interpolate.splev(u, tck, 3)
 
-        self.addPolyLine(list(zip(out[0], out[1], out[2])), color, thick, thickness)
+        spline = np.stack(out).T
+        splineD1 = np.stack(outD1).T
+        splineD2 = np.stack(outD2).T
+        splineD3 = np.stack(outD3).T
+
+        curvPlotActor = vtk.vtkXYPlotActor()
+        curvPlotActor.SetTitle("Curvature")
+        curvPlotActor.SetXTitle("")
+        curvPlotActor.SetYTitle("")
+        curvPlotActor.SetXValuesToIndex()
+        
+        torsPlotActor = vtk.vtkXYPlotActor()
+        torsPlotActor.SetTitle("Torsion")
+        torsPlotActor.SetXTitle("")
+        torsPlotActor.SetYTitle("")
+        torsPlotActor.SetXValuesToIndex()
+
+        curvArray = vtk.vtkDoubleArray()
+        torsArray = vtk.vtkDoubleArray()
+        curvTorsArray = vtk.vtkDoubleArray()
+
+        curvFieldData = vtk.vtkFieldData()
+        torsFieldData = vtk.vtkFieldData()
+
+        curvDataObject = vtk.vtkDataObject()
+        torsDataObject = vtk.vtkDataObject()
+        
+        for i in range(len(u)):
+            d1Xd2 = np.cross(splineD1[i], splineD2[i])
+            Nd1Xd2 = np.linalg.norm(d1Xd2)
+            
+            currCurv = Nd1Xd2 / math.pow(np.linalg.norm(splineD1[i]),3)
+            try:
+                currTors = np.dot(d1Xd2, splineD3[i]) / math.pow(Nd1Xd2, 2)
+            except RuntimeWarning:
+                currTors = 0
+
+            #currTors = np.linalg.det(np.stack([splineD1[i], splineD2[i], splineD3[i]]).T) / math.pow(np.linalg.norm(np.cross(splineD1[i], splineD2[i])), 2)
+            
+            curvArray.InsertNextValue(currCurv)
+            torsArray.InsertNextValue(currTors)
+            curvTorsArray.InsertNextValue(currCurv + abs(currTors))
+
+        curvFieldData.AddArray(curvArray)
+        curvDataObject.SetFieldData(curvFieldData)
+        curvPlotActor.AddDataObjectInput(curvDataObject)
+        
+        torsFieldData.AddArray(torsArray)
+        torsDataObject.SetFieldData(torsFieldData)
+        torsPlotActor.AddDataObjectInput(torsDataObject)
+        
+
+        vtkPoints = vtk.vtkPoints()
+        for point in spline:
+            vtkPoints.InsertNextPoint(point[0], point[1], point[2])
+
+        if thick:
+            cellArray = vtk.vtkCellArray()
+            cellArray.InsertNextCell(len(spline))
+            for i in range(len(spline)):
+                cellArray.InsertCellPoint(i)
+
+            polyData = vtk.vtkPolyData()
+            polyData.SetPoints(vtkPoints)
+            polyData.SetLines(cellArray)
+
+            polyData.GetPointData().SetScalars(curvTorsArray)
+            
+            tubeFilter = vtk.vtkTubeFilter()
+            tubeFilter.SetNumberOfSides(8)
+            tubeFilter.SetInputData(polyData)
+            tubeFilter.SetRadius(thickness)
+            tubeFilter.Update()
+
+            mapper = vtk.vtkPolyDataMapper()
+            mapper.SetInputConnection(tubeFilter.GetOutputPort())
+
+        else:
+            unstructuredGrid = vtk.vtkUnstructuredGrid()
+            unstructuredGrid.SetPoints(vtkPoints)
+            for i in range(1, len(spline)):
+                unstructuredGrid.InsertNextCell(vtk.VTK_LINE, 2, [i-1, i])
+
+            unstructuredGrid.GetPointData().SetScalars(curvArray)
+            
+            mapper = vtk.vtkDataSetMapper()
+            mapper.SetInputData(unstructuredGrid)
+
+        self._curvPlotWidget = vtk.vtkXYPlotWidget()
+        self._curvPlotWidget.SetXYPlotActor(curvPlotActor)
+        self._curvPlotWidget.SetInteractor(self._renderWindowInteractor)
+        self._curvPlotWidget.SetEnabled(True)
+
+        self.torsPlotWidget = vtk.vtkXYPlotWidget()
+        self.torsPlotWidget.SetXYPlotActor(torsPlotActor)
+        self.torsPlotWidget.SetInteractor(self._renderWindowInteractor)
+        self.torsPlotWidget.SetEnabled(True)
+            
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        actor.GetProperty().SetColor(color)
+
+        self._renderer.AddActor(actor)
+
+
+        #self.addPolyLine(list(zip(out[0], out[1], out[2])), color, thick, thickness)
 
     def addBSplineDEPRECATED(self, controlPolygon, degree, color, thick=False, thickness=_DEFAULT_BSPLINE_THICKNESS):
         x = controlPolygon[:,0]
