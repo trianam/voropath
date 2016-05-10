@@ -10,6 +10,7 @@ warnings.filterwarnings("error")
 
 class Plotter:
     COLOR_BG = vtk.util.colors.light_grey
+    COLOR_BG_PLOT = vtk.util.colors.ghost_white
     #vtk.util.colors.ivory
     COLOR_OBSTACLE = vtk.util.colors.banana
     COLOR_SITES = vtk.util.colors.cobalt
@@ -17,21 +18,31 @@ class Plotter:
     COLOR_CONTROL_POINTS = vtk.util.colors.tomato
     COLOR_CONTROL_POLIG = vtk.util.colors.mint
     COLOR_GRAPH = vtk.util.colors.sepia
+    COLOR_PLOT_CURV = vtk.util.colors.blue
+    COLOR_PLOT_TORS = vtk.util.colors.red
 
     _DEFAULT_LINE_THICKNESS = 0.05
     _DEFAULT_POINT_THICKNESS = 0.1
     _DEFAULT_BSPLINE_THICKNESS = 0.1
 
     def __init__(self):
-        self._renderer = vtk.vtkRenderer()
-        self._renderer.SetBackground(self.COLOR_BG)
+        self._rendererScene = vtk.vtkRenderer()
+        self._rendererScene.SetBackground(self.COLOR_BG)
 
-        self._renderWindow = vtk.vtkRenderWindow()
-        self._renderWindow.AddRenderer(self._renderer)
+        self._renderWindowScene = vtk.vtkRenderWindow()
+        self._renderWindowScene.AddRenderer(self._rendererScene)
         self._renderWindowInteractor = vtk.vtkRenderWindowInteractor()
-        self._renderWindowInteractor.SetRenderWindow(self._renderWindow)
+        self._renderWindowInteractor.SetRenderWindow(self._renderWindowScene)
         self._interactorStyle = vtk.vtkInteractorStyleUnicam()
 
+        
+        self._contextViewPlot = vtk.vtkContextView()
+        self._contextViewPlot.GetRenderer().SetBackground(self.COLOR_BG_PLOT)
+
+        self._chartXY = vtk.vtkChartXY()
+        self._contextViewPlot.GetScene().AddItem(self._chartXY)
+        self._chartXY.SetShowLegend(True)
+        
     def draw(self):
         self._renderWindowInteractor.Initialize()
         self._renderWindowInteractor.SetInteractorStyle(self._interactorStyle)
@@ -45,13 +56,17 @@ class Plotter:
         widget.SetEnabled(True)
         widget.InteractiveOn()
 
-        self._renderer.ResetCamera()
-        camPos = self._renderer.GetActiveCamera().GetPosition()
-        self._renderer.GetActiveCamera().SetPosition((camPos[2],camPos[1],camPos[0]))
-        self._renderer.GetActiveCamera().SetViewUp((0.0,0.0,1.0))
+        self._rendererScene.ResetCamera()
+        camPos = self._rendererScene.GetActiveCamera().GetPosition()
+        self._rendererScene.GetActiveCamera().SetPosition((camPos[2],camPos[1],camPos[0]))
+        self._rendererScene.GetActiveCamera().SetViewUp((0.0,0.0,1.0))
 
-        self._renderWindow.Render()
-        self._renderWindowInteractor.Start()
+        self._renderWindowScene.Render()
+        #self._renderWindowInteractor.Start()
+
+        self._contextViewPlot.GetRenderWindow().SetMultiSamples(0)
+        self._contextViewPlot.GetInteractor().Initialize()
+        self._contextViewPlot.GetInteractor().Start()
 
     def addTetrahedron(self, vertexes, color):
         vtkPoints = vtk.vtkPoints()
@@ -71,7 +86,7 @@ class Plotter:
         actor.SetMapper(mapper)
         actor.GetProperty().SetColor(color)
 
-        self._renderer.AddActor(actor)
+        self._rendererScene.AddActor(actor)
 
     def addTriangles(self, triangles, color):
         vtkPoints = vtk.vtkPoints()
@@ -100,7 +115,7 @@ class Plotter:
         actor.SetMapper(mapper)
         actor.GetProperty().SetColor(color)
 
-        self._renderer.AddActor(actor)
+        self._rendererScene.AddActor(actor)
 
     def addPolyLine(self, points, color, thick=False, thickness=_DEFAULT_LINE_THICKNESS):
         vtkPoints = vtk.vtkPoints()
@@ -139,7 +154,7 @@ class Plotter:
         actor.SetMapper(mapper)
         actor.GetProperty().SetColor(color)
 
-        self._renderer.AddActor(actor)
+        self._rendererScene.AddActor(actor)
 
     def addPoints(self, points, color, thick=False, thickness=_DEFAULT_POINT_THICKNESS):
         vtkPoints = vtk.vtkPoints()
@@ -172,7 +187,7 @@ class Plotter:
         actor.SetMapper(mapper)
         actor.GetProperty().SetColor(color)
 
-        self._renderer.AddActor(actor)
+        self._rendererScene.AddActor(actor)
 
     def addBSpline(self, controlPolygon, degree, color, thick=False, thickness=_DEFAULT_BSPLINE_THICKNESS):
         x = controlPolygon[:,0]
@@ -214,16 +229,17 @@ class Plotter:
         torsPlotActor.SetYTitle("")
         torsPlotActor.SetXValuesToIndex()
 
+        uArray = vtk.vtkDoubleArray()
+        uArray.SetName("t")
+        
         curvArray = vtk.vtkDoubleArray()
+        curvArray.SetName("Curvature")
+
         torsArray = vtk.vtkDoubleArray()
+        torsArray.SetName("Torsion")
+
         curvTorsArray = vtk.vtkDoubleArray()
 
-        curvFieldData = vtk.vtkFieldData()
-        torsFieldData = vtk.vtkFieldData()
-
-        curvDataObject = vtk.vtkDataObject()
-        torsDataObject = vtk.vtkDataObject()
-        
         for i in range(len(u)):
             d1Xd2 = np.cross(splineD1[i], splineD2[i])
             Nd1Xd2 = np.linalg.norm(d1Xd2)
@@ -235,20 +251,30 @@ class Plotter:
                 currTors = 0
 
             #currTors = np.linalg.det(np.stack([splineD1[i], splineD2[i], splineD3[i]]).T) / math.pow(np.linalg.norm(np.cross(splineD1[i], splineD2[i])), 2)
-            
+            uArray.InsertNextValue(u[i])
             curvArray.InsertNextValue(currCurv)
             torsArray.InsertNextValue(currTors)
             curvTorsArray.InsertNextValue(currCurv + abs(currTors))
 
-        curvFieldData.AddArray(curvArray)
-        curvDataObject.SetFieldData(curvFieldData)
-        curvPlotActor.AddDataObjectInput(curvDataObject)
+        plotTable = vtk.vtkTable()
+        plotTable.AddColumn(uArray)
+        plotTable.AddColumn(curvArray)
+        plotTable.AddColumn(torsArray)
         
-        torsFieldData.AddArray(torsArray)
-        torsDataObject.SetFieldData(torsFieldData)
-        torsPlotActor.AddDataObjectInput(torsDataObject)
-        
-
+        points = self._chartXY.AddPlot(vtk.vtkChart.POINTS)
+        points.SetInputData(plotTable, 0, 1)
+        points.SetColor(0, 0, 255, 255)
+        points.SetWidth(1.0)
+        points.SetMarkerStyle(vtk.vtkPlotPoints.CIRCLE)
+        points.SetMarkerSize(2)
+            
+        points = self._chartXY.AddPlot(vtk.vtkChart.POINTS)
+        points.SetInputData(plotTable, 0, 2)
+        points.SetColor(255, 0, 0, 255)
+        points.SetWidth(1.0)
+        points.SetMarkerStyle(vtk.vtkPlotPoints.CIRCLE)
+        points.SetMarkerSize(2)
+            
         vtkPoints = vtk.vtkPoints()
         for point in spline:
             vtkPoints.InsertNextPoint(point[0], point[1], point[2])
@@ -285,21 +311,11 @@ class Plotter:
             mapper = vtk.vtkDataSetMapper()
             mapper.SetInputData(unstructuredGrid)
 
-        self._curvPlotWidget = vtk.vtkXYPlotWidget()
-        self._curvPlotWidget.SetXYPlotActor(curvPlotActor)
-        self._curvPlotWidget.SetInteractor(self._renderWindowInteractor)
-        self._curvPlotWidget.SetEnabled(True)
-
-        self.torsPlotWidget = vtk.vtkXYPlotWidget()
-        self.torsPlotWidget.SetXYPlotActor(torsPlotActor)
-        self.torsPlotWidget.SetInteractor(self._renderWindowInteractor)
-        self.torsPlotWidget.SetEnabled(True)
-            
         actor = vtk.vtkActor()
         actor.SetMapper(mapper)
         actor.GetProperty().SetColor(color)
 
-        self._renderer.AddActor(actor)
+        self._rendererScene.AddActor(actor)
 
 
         #self.addPolyLine(list(zip(out[0], out[1], out[2])), color, thick, thickness)
@@ -361,4 +377,4 @@ class Plotter:
         actor.SetMapper(mapper)
         actor.GetProperty().SetColor(color)
 
-        self._renderer.AddActor(actor)
+        self._rendererScene.AddActor(actor)
