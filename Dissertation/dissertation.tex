@@ -1,0 +1,43 @@
+%This work is licensed under the Creative Commons
+%Attribution-ShareAlike 4.0 International License. To view a copy of
+%this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or
+%send a letter to Creative Commons, PO Box 1866, Mountain View, CA
+%94042, USA.
+
+\input{header}
+
+\begin{document}
+%roba del modello
+%--------------------------------------------------------------
+\frenchspacing
+\raggedbottom
+\pagenumbering{Roman}
+\pagestyle{plain}
+%--------------------------------------------------------------
+% Frontmatter
+%--------------------------------------------------------------
+\include{titlePage}
+\cleardoublepage\include{summary}
+\cleardoublepage\include{thanks}
+\cleardoublepage\tableofcontents
+%--------------------------------------------------------------
+% Mainmatter
+%--------------------------------------------------------------
+\clearpage
+\cleardoublepage
+%--------------------------------------------------------------
+\newpage
+\pagenumbering{arabic}
+\pagestyle{scrheadings}
+\sloppy
+\part{Introduction - State of the art}
+\subfile{pathPlanning}
+\subfile{parametricCurves}
+\part{Project}
+\part{Implementation - Testing}
+\clearpage
+%\addcontentsline{toc}{chapter}{Bibliography}
+%\bibliographystyle{apalike}
+%\bibliography{bibliography}
+
+\end{document}
