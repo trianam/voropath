@@ -1,5 +1,154 @@
 \documentclass[dissertation.tex]{subfiles}
 \begin{document}
 \chapter{Parametric curves}
-parpar
+\section{Splines}\label{sec:spline}
+A \emph{spline} $\mathbf{S}(t)$ is a parametric function - defined in a certain space
+(bidimensional in this work) as a
+function of a certain parameter $t$ - that is composed from polynomial
+functions, piecewise in intervals in $t$.
+
+Formally we define the parametric domain
+$$[a,b]\subset\mR$$
+and a partition of that space defined by the \emph{nodes}
+$$\tau = \{\tau_0,\dots,\tau_l\}$$
+such that $a=\tau_0<\tau_1<\dots<\tau_{l-1}<\tau_l=b$ forming the
+intervals
+$$
+I_i=
+\begin{cases}
+  [\tau_i,\tau_{i+1}) & \mbox{if } i=0,\dots,l-2\\
+    [\tau_i,\tau_{i+1}] & \mbox{if } i=l-1\\
+\end{cases}
+$$
+is possible to define the following spaces:
+\paragraph{Piecewise polynomial functions space} $P_{m,\tau}$
+is the space of the functions that are polynomials of maximum degree $m$
+in each interval $I_i$ of the partition, formally:
+\begin{multline*}
+  P_{m,\tau}=\{f:[a,b]\rightarrow\mR\ \mid\ \exists p_0\dots
+  p_{l-1}\in\Pi_m \ \text{such that}\\
+  f(t)=p(t),\ \forall t\in I_i,\
+  i=0\dots l-1\}
+\end{multline*}
+where $\Pi_m$ is the space of the polynomials of degree from $0$ to
+$m$. The dimension of this space is $l\cdot(m+1)$ because have $l$
+polynomials and the dimension of $\Pi_m$ is $m+1$.
+\paragraph{Classic spline functions space} $S_{m,\tau}$ is the space of
+the piecewise polynomial functions that have continuity $C^{m-1}$ in
+the junctions of the intervals, formally:
+$$
+S_{m,\tau}=P_{m,\tau}\cap C^{m-1}[a,b].
+$$
+The dimension of this space is $l\cdot(m+1)-(l-1)\cdot m\,=\,l+m$.
+\paragraph{Generalized spline functions space} $S_{m,\tau,M}$ is the
+space of piecewise polynomial function that have a discontinuity or a
+continuity until $C^{m-1}$ in the junctions of the intervals,
+determined by the values of the multiplicity's
+vector
+$$
+M=\{m_1,\dots,m_{l-1}\},\quad m_i\in\mN,\quad 1\leq m_i\leq m+1.
+$$
+Formally:
+\begin{multline*}
+  S_{m,\tau,M}=\{f:[a,b]\rightarrow\mR\ \mid\ \exists p_0\dots
+  p_{l-1}\in\Pi_m \ \text{such that}\\
+  f(t)=p(t),\ \forall t\in I_i,\
+  i=0\dots l-1\ \text{and}\\
+  p_{i-1}^{(j)}(\tau_i)=p_{i}^{(j)}(\tau_i),\ j=0,\dots,m-m_i,\ i=1,\dots,l-1\}.
+\end{multline*}
+The dimension of the space is between the previous two, and is true
+that:
+$$
+\Pi_m\subseteq S_{m,\tau}\subseteq S_{m,\tau,M}\subseteq P_{m,\tau},
+$$
+in fact:
+\begin{itemize}
+  \item if $m_i=1$ for all $i=1,\dots,l-1$, then
+    $S_{m,\tau,M}=S_{m,\tau}$;
+  \item if $m_i=m+1$ for all $i=1,\dots,l-1$, then
+    $S_{m,\tau,M}=P_{m,\tau}$.
+\end{itemize}
+
+\subsection{Truncated-powers base for classic splines}\label{sec:truncpow}
+A truncated power $(t-\tau_i)_+^m$ is
+defined by
+$$
+(t-\tau_i)_+^m=
+\begin{cases}
+  0,&\mbox{if}\quad t\leq\tau_i\\
+  (t-\tau_i)^m, &\mbox{otherwise}.
+\end{cases}
+$$
+Is possible to demonstrate that the functions
+$$
+g_i(t)=(t-\tau_i)_+^m)\ \in S_{m\tau},\quad i=1,\dots,l-1
+$$
+are linearly independents, and that
+$$
+1,t,t^2,\dots,t^m,(t-\tau_1)_+^m,\dots,(t-\tau_{l-1})_+^m
+$$
+form a base for the classic spline functions space. A generic element
+from this space can be expressed like
+$$
+\mathbf{S}(t)=\sum_{i=0}^m \mathbf{c_i}\cdot t^i\, +\, \sum_{j=1}^{l-1} \mathbf{d_i}\cdot (t-\tau_j)_+^m
+$$
+but this form is not a practical representation of a spline because
+there isn't an intuitive correlation between the points
+$\mathbf{c_i}$, $\mathbf{d_j}$ and the curve. For this purpose we
+define the \emph{B-splines base} in section~\ref{sec:bsplines}.
+
+\subsection{B-Splines base for classic splines}\label{sec:bsplines}
+\emph{B-splines} are splines defined with a specific base. In this
+paragraph we consider only the classic splines $S_{m,\tau}$ and not
+the generalized splines $S_{m,\tau,M}$, furthermore we consider the
+\emph{order}: $k=m+1$.
+
+For defining the B-splines we need to extend the partition vector
+$\tau=\{\tau_0,\cdots,\tau_l\}$ with $k-1$ nodes to the left and $k-1$ to
+the right, so we define a new vector
+$$
+T=\{t_0,\dots,t_{k-2},t_{k-1},\dots,t_{n+1},t_{n+2},\dots,t_{n+k}\}
+$$
+such that
+$$
+t_0\leq\dots\leq t_{k-2}\leq \{t_{k-1}\equiv\tau_0\equiv a\}<\dots<
+\{t_{n+1}\equiv\tau_l\equiv b\}\leq t_{n+2}\leq\dots\leq t_{n+k}.
+$$
+$\tau$ have $l+1$ elements, so we can calculate the value of
+$$
+n=l+k-2,
+$$
+and the dimension of $S_{m,\tau}$ is
+$$
+l+m=l+k-1=n+1
+$$
+that is the number of necessary bases for the space.
+
+The $n+1$ basis $N_{i,k}(t)$ of the B-splines of order $k$ for
+$i=0,\dots,n$ are defined by the 
+recursive formula:
+\begin{align*}
+  N_{i,1}(t) &=
+  \begin{cases}
+    1,\quad \mbox{if}\quad t_i\leq t<t_{i+1}\\
+    0,\quad \mbox{otherwise}
+  \end{cases}\\
+  N_{i,k}(t) &= \omega_{i,k-1}(t)\cdot N_{i,k-1}(t)\ +\
+  (1-\omega_{i+1,k-1}(t))\cdot N_{i+1,k-1}(t)
+\end{align*}
+where
+$$
+\omega_{i,k}(t) = \frac{t-t_i}{t_{i+k}-t_i}.
+$$
+
+The elements of the classic splines space can be expressed in the form
+$$
+\mathbf{S}(t)=\sum_{i=0}^n\mathbf{v_i}\cdot N_{i,k}(t),
+$$
+and this representation is more convenient respect to the one of
+section~\ref{sec:truncpow} because the curve $\mathbf{S}(t)$ roughly
+follow the shape given by the points $\mathbf{v_i}$. Those points are
+called \emph{control vertexes} and the polygon defined by them is
+called \emph{control polygon} and they can be used to control the
+shape of the curve.
 \end{document}
