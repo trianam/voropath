@@ -4,8 +4,8 @@
 %send a letter to Creative Commons, PO Box 1866, Mountain View, CA
 %94042, USA.
 
-%\documentclass[gray,handout, pdftex, 11pt]{beamer}
-%\documentclass[handout, pdftex, 11pt]{beamer}
+%\documentclass[gray,handout, pdflatex, 11pt]{beamer}
+%\documentclass[handout, pdflatex, 11pt]{beamer}
 
 \documentclass[pdflatex, 11pt]{beamer}
 
@@ -21,11 +21,14 @@
 \usepackage{microtype}
 \usepackage{acronym}
 \usepackage{array}
+\usepackage{pifont}
 \usepackage{tikz}
 \usetikzlibrary{shapes, chains, scopes, shadows, positioning, arrows,
   decorations.pathmorphing, calc, mindmap, petri}
 
 \newcommand{\bigO}{\ensuremath{\mathcal{O}}}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
 
 \def\transW{8mm}
 \def\transH{2mm}
@@ -34,8 +37,10 @@
 \tikzstyle{convexHull}=[fill=blue!30]
 \tikzstyle{convexHullBord}=[color=black, dash pattern=on 3pt off 3pt]
 \tikzstyle{controlPoly}=[color=black, line width=0.25mm]
+\tikzstyle{controlPolyTract}=[color=black, line width=0.25mm, dash pattern=on 3pt off 3pt]
 \tikzstyle{spline}=[color=red, line width=0.5mm]
 \tikzstyle{controlVert}=[color=green, draw=black]
+\tikzstyle{controlVertHigh}=[color=red, draw=black]
 \tikzstyle{textArrow}=[draw=red, line width=0.5mm, ->]
 
 \colorlet{mmcb}{black!70}
@@ -145,9 +150,10 @@ shadow, minimum width=\transH, minimum height=\transW]
 
 
 \mode<presentation>{
+  \usetheme{Martina}
   %-------------------------1
-  \usetheme{Boadilla}
-  \usecolortheme{beaver}
+  %\usetheme{Boadilla}
+  %\usecolortheme{beaver}
   %-------------------------1
   %-------------------------2
   %\usetheme{Goettingen}
@@ -163,16 +169,16 @@ shadow, minimum width=\transH, minimum height=\transW]
   \bibliographystyle{abbrv}  
   %\renewcommand\bibfont{\scriptsize}
   \setbeamertemplate{bibliography item}{\textbullet}
-  \setbeamertemplate{itemize item}{\checkmark}
+  \setbeamertemplate{itemize item}{\cmark}
   % \setbeamertemplate{itemize subitem}{-}
   \setbeamertemplate{enumerate items}[default]
   \setbeamertemplate{sections/subsections in toc}[square]
 }
 
-\usebackgroundtemplate
-{
-  \begin{tikzpicture}
-    \node[opacity=0.1] {\includegraphics[]{img/logoUnifi.png}};
-%    \node[opacity=0.04] {\includegraphics[scale=1]{img/logoUnifi.eps}};
-  \end{tikzpicture}
-}
+% \usebackgroundtemplate
+% {
+%   \begin{tikzpicture}
+%     \node[opacity=0.1] {\includegraphics[]{img/logoUnifi.png}};
+% %    \node[opacity=0.04] {\includegraphics[scale=1]{img/logoUnifi.eps}};
+%   \end{tikzpicture}
+% }

@@ -1,0 +1,38 @@
+\defbeamertemplate*{title page}{martina}[1][colsep=-4bp,rounded=true,shadow=true]
+{
+  \begin{tikzpicture}[overlay]
+    \node[opacity=0.5] at (11,-11) {\includegraphics[]{img/logoUnifi.png}};
+    % \node[opacity=0.04] {\includegraphics[scale=1]{img/logoUnifi.eps}};
+  \end{tikzpicture}
+
+  \vbox{}
+  \vfill
+  \begingroup
+    \centering
+    \begin{beamercolorbox}[sep=8pt,center,#1]{title}
+      \usebeamerfont{title}\inserttitle\par%
+      \ifx\insertsubtitle\@empty%
+      \else%
+        \vskip0.25em%
+        {\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}\insertsubtitle\par}%
+      \fi%     
+    \end{beamercolorbox}%
+    \vskip1em\par
+    \begin{beamercolorbox}[sep=1pt,center,#1]{author}
+      \usebeamerfont{author}\insertauthor
+    \end{beamercolorbox}
+    \begin{beamercolorbox}[sep=1pt,left,#1]{institute}
+%      \usebeamerfont{institute}\insertinstitute
+      \includegraphics[width=5cm]{img/logoUnifiName.eps}
+    \end{beamercolorbox}
+    \begin{beamercolorbox}[sep=1pt,left,#1]{date}
+      \rule{0cm}{0.5cm}\rule{1cm}{0cm}\usebeamerfont{date}\small\insertdate
+    \end{beamercolorbox}\vskip0.5em
+    {\usebeamercolor[fg]{titlegraphic}\inserttitlegraphic\par}
+    {
+      \tiny
+      \vfill
+      \href{http://creativecommons.org/licenses/by-sa/4.0/}{\includegraphics[width=1cm]{img/logoCC.png}} This work is licensed under a \href{http://creativecommons.org/licenses/by-sa/4.0/}{Creative Commons Attribution-ShareAlike 4.0 International License}.
+    }
+  \endgroup
+}

@@ -1,0 +1,587 @@
+%This work is licensed under the Creative Commons
+%Attribution-ShareAlike 4.0 International License. To view a copy of
+%this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or
+%send a letter to Creative Commons, PO Box 1866, Mountain View, CA
+%94042, USA.
+
+\input{header}
+
+
+\begin{document}
+
+\title[Seminar]{\textbf{Seminar}}
+\date[23 may 2016]{23 may 2016}
+\subtitle{Path planning using Voronoi diagrams and B-Splines}
+\institute[Uni. Firenze]{
+  \includegraphics[width=5cm]{img/logoUnifiName.eps}
+}
+
+\author[Martina Stefano]{
+  \begin{center}
+    \begin{tabular}{lr}
+      Stefano \textsc{Martina}\\
+      \href{mailto:stefano.martina@stud.unifi.it}{stefano.martina@stud.unifi.it}\\
+    \end{tabular}
+  \end{center}
+}
+
+% \titlegraphic{
+%   \vspace{-0.5cm}
+%   \tiny
+%   \href{http://creativecommons.org/licenses/by-sa/4.0/}{\includegraphics[width=1cm]{img/logoCC.png}}
+%   This work is licensed under a
+%   \href{http://creativecommons.org/licenses/by-sa/4.0/}{Creative
+%     Commons Attribution-ShareAlike 4.0 International License}.
+% }
+
+\newacro{VD}{Voronoi Diagram}
+
+\acrodefplural{VD}[VDs]{Voronoi Diagrams}
+
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+
+\section{Prerequisites}
+
+\begin{frame}
+  \frametitle{Voronoi diagrams}
+  \begin{description}
+  \item[Input:] A set of points in plane (or space) called
+    \alert{sites}
+  \item[Output:]<2-> A partition of the plane (or space) such that each
+    point of a \alert{region} is nearer to a certain site respect to
+    the others
+  \end{description}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{center}
+        \includegraphics[width=\textwidth]{img/voroSites.eps}
+      \end{center}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{center}
+        \includegraphics[width=\textwidth]<2->{img/voronoi.eps}
+      \end{center}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{B-spline}
+  \begin{center}
+    \includegraphics[width=0.9\textwidth, trim=110 30 50 50, clip]{img/bspline.eps}
+  \end{center}
+  \pause
+  \begin{itemize}
+  \item \alert{parametric} curves\pause
+  \item follow the shape of a \alert{control poligon}\pause
+  \item can interpolate the
+    \alert{extremes} of the control polygon
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{B-splines details}
+  \begin{itemize}
+  \item \alert{Order $k$} ($= degree + 1$)\pause
+  \item Extended \alert{partition} (of parametric
+    space \alert{$[a,b]$})
+    $$
+    T=\{t_0,\dots,t_{k-2},\alert{t_{k-1}},\dots,\alert{t_{n+1}},t_{n+2},\dots,t_{n+k}\}
+    $$
+    {\tiny
+      $$
+      t_0\leq\dots\leq t_{k-2}\leq t_{k-1}\alert{(\equiv a)} <\dots<
+      t_{n+1}\alert{(\equiv b)} \leq t_{n+2}\leq\dots\leq t_{n+k}
+      $$
+    }\pause
+  \item \alert{$n+1$ basis}
+    {\small
+      \begin{align*}
+        \alert{N_{i,1}(t)} &=
+                     \begin{cases}
+                       1,\quad \mbox{if}\quad t_i\leq t<t_{i+1}\\
+                       0,\quad \mbox{otherwise}
+                     \end{cases}\\
+        \alert{N_{i,k}(t)} &= \omega_{i,k-1}(t)\cdot \alert{N_{i,k-1}(t)}\ +\
+                     (1-\omega_{i+1,k-1}(t))\cdot \alert{N_{i+1,k-1}(t)}
+      \end{align*}
+    }
+    {\tiny
+      $$
+      \omega_{i,k}(t) = \frac{t-t_i}{t_{i+k}-t_i}.
+      $$
+    }\pause
+  \item B-spline
+    $$
+    \alert{\mathbf{S}(t)}=\sum_{i=0}^n\alert{\mathbf{v_i}}\cdot N_{i,k}(t),
+    $$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Useful properties of B-spline curves}
+  \begin{itemize}
+  \item \alert{Clamped} if $t_0=\dots =t_{k-1}$ and $t_{n+1}=\dots
+    =t_{n+k}$\pause
+  \item \alert{Continuity} $C^{k-2}$ between polynomials (or $C^{m-1}$)\pause
+  \item Contained
+    inside the union of \alert{convex hulls} composed of consecutive
+    \alert{$k$} vertexes of control polygon
+    \begin{center}
+      \begin{tikzpicture}
+        \coordinate (a) at (0,0);
+        \coordinate (b) at (0.5,1);
+        \coordinate (c) at (2,1.5);
+        \coordinate (d) at (4,1.5);
+        \coordinate (e) at (5.5,1);
+        \coordinate (f) at (6,0);
+        
+        \path[convexHull] (a) -- (b) -- (c) -- (a);
+        \path[convexHull] (b) -- (c) -- (d) -- (b);
+        \path[convexHull] (c) -- (d) -- (e) -- (c);
+        \path[convexHull] (d) -- (e) -- (f) -- (d);
+        
+        \draw[convexHullBord] (a) -- (c);
+        \draw[convexHullBord] (b) -- (d);
+        \draw[convexHullBord] (c) -- (e);
+        \draw[convexHullBord] (d) -- (f);
+        
+        \draw[controlPoly] (a) -- (b) -- (c) -- (d) -- (e) -- (f);
+        \foreach \p in {a,b,c,d,e,f}
+        \filldraw[controlVert] (\p) circle (2pt);
+      \end{tikzpicture}
+    \end{center}\pause
+  \item Touch to the segment between \alert{$k-1$ aligned} control
+    vertexes\pause
+  \item Lay down in the segment between \alert{$k$ aligned} control vertexes
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Dijkstra algorithm}
+  \begin{pblock}
+def dijkstra(graph, start, end):
+  path = []
+  Q = priorityQueue.PQueue()
+  dist = {}
+  prev = {}
+  for node in graph.nodes(): #populate the queue
+    if node != start:
+      dist[node] = inf
+      Q.add(node, inf)
+    else:
+      dist[node] = 0
+      Q.add(node, 0)
+  while True:  #main loop
+    u = Q.pop() #take nearest node and remove from queue
+    if u == end or dist[u] == inf: #finished (good or bad)
+      break
+    #all neighbors still in queue
+    for v in Q.filterGet(lambda node: node in graph.neighbors(u)):
+      tmpDist = dist[u] + graph[u][v]['weight']
+      if tmpDist < dist[v]: #if distance shorter update values
+        dist[v] = tmpDist
+        prev[v] = u
+        Q.add(v, tmpDist) #update distance also in queue
+  u = end
+  while u in prev:  #backward recreation of path
+      u = prev[u]
+      path[:0] = [u]
+  if path:
+      path[len(path):] = [end]
+      path[:0] = [start]
+  return path
+  \end{pblock}  
+\end{frame}
+
+\section{Background}
+
+\begin{frame}
+  \frametitle{Background}
+  \begin{block}{Main problem}
+    \alert{Path planning} from a \alert{start} point to an \alert{end}
+    point in 3D space with obstacles using \alert{Voronoi} diagrams.
+  \end{block}\pause
+  \begin{enumerate}
+  \item Distribute \alert{points} in the surfaces of obstacles
+    \begin{itemize}
+    \item and optionally in the surface of bounding box\pause
+    \end{itemize}
+  \item Build \alert{Voronoi} diagram using those points as
+    source\pause
+  \item Transform the Voronoi diagram in a \alert{graph}
+    \begin{itemize}
+    \item cells \alert{vertexes} as \alert{nodes}
+    \item cells \alert{edges} as \alert{arcs} (infinite edges
+      ignored)\pause
+    \end{itemize}
+  \item \alert{Prune} the arcs that crosses an obstacle's
+    surface\pause
+  \item Attach the \alert{start} and \alert{end} points to the
+    graph as nodes\pause
+  \item Calculate the shortest path from start node to end node using
+    \alert{Dijkstra}'s algorithm.
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Example}
+  \begin{center}
+    \includegraphics[width=0.75\textwidth, trim=110 30 50 50, clip]<1>{img/screen1.eps}
+    \includegraphics[width=0.75\textwidth, trim=110 30 50 50, clip]<2>{img/screen2.eps}
+    \includegraphics[width=0.75\textwidth, trim=110 30 50 50, clip]<3>{img/screen3.eps}
+    \includegraphics[width=0.75\textwidth, trim=110 30 50 50, clip]<4>{img/screen4.eps}
+    \includegraphics[width=0.75\textwidth, trim=110 30 50 50, clip]<5>{img/screen5.eps}
+  \end{center}
+\end{frame}
+
+\section{Implementation}
+
+\begin{frame}
+  \frametitle{Improvement}
+  \begin{block}{Idea}
+    Make a \alert{smoother} curve instead of finding the polygonal chain
+    of the shortest path in the structure
+  \end{block}
+  \pause
+  \begin{itemize}
+  \item we can use a \alert{B-Spline} that \pause
+    \begin{itemize}
+    \item \alert{interpolate} the start and end vertexes\pause
+    \item use the shortest path found with
+      Dijkstra as \alert{control polygon}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Problem}  
+  \begin{itemize}
+  \item The \alert{control polygon} is free from obstacles by
+    construction\pause
+    \begin{itemize}
+    \item (the graph is pruned of the arcs that cross an obstacle's surface)\pause
+    \end{itemize}
+  \item But the \alert{curve} is not guaranteed to be free from obstacles\pause
+  \end{itemize}
+  \begin{center}
+    \begin{tikzpicture}
+      \path[obstacle] (1,0) -- (2,1) -- (3,0) -- (1,0);
+      \draw[controlPoly] (0,0) -- (2,2) -- (4,0);
+      \draw[spline] (0,0) to [bend left=40] (4,0);
+
+      \filldraw[controlVert] (0,0) circle (2pt);
+      \filldraw[controlVert] (2,2) circle (2pt);
+      \filldraw[controlVert] (4,0) circle (2pt);
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Solution}
+  \begin{itemize}
+  \item A \alert{B-Spline} of order \alert{$k$} is contained
+    inside the union of \alert{convex hulls} composed of consecutive
+    \alert{$k$} vertexes of control polygon\pause
+  \end{itemize}
+  \begin{center}
+    \begin{tikzpicture}
+      \coordinate (a) at (0,0);
+      \coordinate (b) at (0.5,1);
+      \coordinate (c) at (2,1.5);
+      \coordinate (d) at (4,1.5);
+      \coordinate (e) at (5.5,1);
+      \coordinate (f) at (6,0);
+
+      \path[convexHull] (a) -- (b) -- (c) -- (a);
+      \path[convexHull] (b) -- (c) -- (d) -- (b);
+      \path[convexHull] (c) -- (d) -- (e) -- (c);
+      \path[convexHull] (d) -- (e) -- (f) -- (d);
+
+      \draw[convexHullBord] (a) -- (c);
+      \draw[convexHullBord] (b) -- (d);
+      \draw[convexHullBord] (c) -- (e);
+      \draw[convexHullBord] (d) -- (f);
+
+      \draw[controlPoly] (a) -- (b) -- (c) -- (d) -- (e) -- (f);
+      \foreach \p in {a,b,c,d,e,f}
+      \filldraw[controlVert] (\p) circle (2pt);
+    \end{tikzpicture}
+  \end{center}
+  \pause
+  \begin{block}{Idea}
+    \begin{itemize}
+    \item we can use a \alert{quadratic} B-Spline (grade 2, order 3) to smooth the
+      path\pause
+    \item and \alert{keep} triangles formed by three
+      consecutive points
+      \alert{free} from obstacles
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{First implementation}
+  \begin{tikzpicture}[remember picture,overlay]
+    \path[textArrow]<11-> ([xshift=-5.5mm,yshift=1mm]tloop2.west) to [out=180, in=180,distance=7mm] ([xshift=-5.5mm,yshift=1mm]tloop1.west);
+  \end{tikzpicture}
+  A variation of \alert{Dijkstra} algorithm is developed where:\pause
+  \begin{enumerate}
+  \item create an ordered \alert{triple} for each three consecutive nodes in the graph\pause
+  \item check if the \alert{triangle} corresponding to each triple
+    \alert{intersect} an obstacle\pause
+  \item populate the \alert{priority queue} with obstacle free
+    \alert{triples}\pause
+    \begin{itemize}
+    \item the initial weight is \alert{$0$} for triples where the
+      \alert{first} node is the \alert{start} node\pause
+    \item is \alert{$\infty$} otherwise\pause
+    \end{itemize}
+  \item\label{item:trijkstraLoop}\tikz[remember picture] \node[coordinate] (tloop1) {};pop the triple with \alert{lowest} weight from the priority
+    queue\pause
+  \item update the weight and pointer to previous of all \alert{neighbouring} triples\pause
+    \begin{itemize}
+    \item a triple $B$ is \alert{subsequent} to a triple $A$ if
+      \alert{$(A[2]=B[1])\land (A[3]=B[2])$}\pause
+    \item the \alert{weight} of a neighbour is \alert{$W(B)=W(A)+dist(A[1],A[2])$}\pause
+    \end{itemize}
+  \item\tikz[remember picture] \node[coordinate] (tloop2) {};repeat from point~\ref{item:trijkstraLoop} until popped a
+    special \alert{ending} triple or a triple with weight
+    \alert{$\infty$}\pause
+  \item the shortest \alert{path} (with free triangular convex hull)
+    can be 
+    obtained following the \alert{previous} pointer from the
+    \alert{ending} triple,
+    and \alert{deconstructing} the triples
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Example}
+  \begin{center}
+    \includegraphics[width=0.75\textwidth, trim=110 30 50 50, clip]{img/screenFinal2.eps}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Complexity}
+  \begin{block}{Total (if obstacle area is not a function of the
+      number of obstacles)}
+    \alert{$\bigO(d^2|Ob|^2+d^3|Ob|)$}\pause
+  \end{block}
+  \begin{itemize}
+  \item The predominant factor is for checking the triples
+    collisions with obstacles\pause
+    \begin{itemize}
+    \item if $d$ is constant \alert{$\bigO(|Ob|^2)$}\pause
+    \end{itemize}
+  \item But if we focus only on routing (i.e. we construct the graph
+    only once)\pause
+    \begin{itemize}
+    \item if $d$ is constant \alert{$\bigO(|Ob|\log|Ob|)$}\pause
+    \item (same of Dijkstra with fixed degree)
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Second implementation}
+  \begin{block}{Reason}
+    \begin{itemize}
+    \item \alert{First} implementation interesting for complexity
+      analysis\pause
+    \item[\xmark] but \alert{rejects} many paths
+    \end{itemize}
+  \end{block}\pause
+  \begin{itemize}
+  \item \alert{Add} aligned control vertexes when an obstacle intersect a triple
+    \begin{center}
+      \begin{tikzpicture}
+        \path[obstacle] (1,0) -- (2,1) -- (3,0) -- (1,0);
+        \draw[controlPoly] (0,0) -- (2,2) -- (4,0);
+
+        \filldraw[controlVert] (0,0) circle (2pt);
+        \filldraw[controlVert] (2,2) circle (2pt);
+        \filldraw[controlVert] (4,0) circle (2pt);\pause
+
+        \only<4->{
+          \draw[controlPolyTract] (1,1) -- (3,1);
+          \filldraw[controlVertHigh] (1,1) circle (2pt);
+          \filldraw[controlVertHigh] (3,1) circle (2pt);
+        }
+      \end{tikzpicture}
+    \end{center}\pause
+  \item new vertexes calculated as linear \alert{combination} of other
+    vertexes using \alert{coefficients} from obstacle detection
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Increase degree}
+  \begin{block}{Continuity}
+    \begin{itemize}
+    \item Using \alert{quadratic} B-Splines means \alert{$C^1$} continuity\pause
+    \item[\xmark] Not nice
+    \end{itemize}
+  \end{block}\pause
+  \begin{itemize}
+  \item[\xmark] If we simply \alert{increase} the B-Spline degree \alert{$\rightarrow$} convex hull is not
+    \alert{planar} anymore\pause
+    \begin{itemize}
+    \item convex hull is formed of union of \alert{tetrahedra}\pause
+    \end{itemize}
+  \end{itemize}
+  \begin{block}{Solution}
+    \begin{itemize}
+    \item \alert{Add} aligned vertexes in control polygon\pause
+      \begin{itemize}
+      \item and then \alert{increase} the degree
+      \end{itemize}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Example: quadratic to quartic (k=3 $\rightarrow$ k=5)}
+  \begin{itemize}
+  \item Add \alert{2} vertexes per edge
+  \end{itemize}\pause
+  \begin{center}
+    \begin{tikzpicture}[scale=1.5]
+      \coordinate (a1) at (0,2);
+      \coordinate (a2) at (2,0.4);
+      \coordinate (a3) at (4,1.6);
+      \coordinate (a4) at (6,0);
+
+      \coordinate (b1) at ($ (a1)!0.33!(a2) $);
+      \coordinate (b2) at ($ (a2)!0.33!(a1) $);
+      \coordinate (b3) at ($ (a2)!0.33!(a3) $);
+      \coordinate (b4) at ($ (a3)!0.33!(a2) $);
+      \coordinate (b5) at ($ (a3)!0.33!(a4) $);
+      \coordinate (b6) at ($ (a4)!0.33!(a3) $);
+      
+      \only<-3>{
+        \path[convexHull] (a1) -- (a2) -- (a3) -- (a1);
+        \path[convexHull] (a2) -- (a3) -- (a4) -- (a2);
+      
+        \draw[convexHullBord] (a1) -- (a3);
+        \draw[convexHullBord] (a2) -- (a4);
+      }
+      \only<4->{
+        \path[convexHull] (a1) -- (b1) -- (b2) -- (a2) -- (b3) -- (a1);
+        \path[convexHull] (b1) -- (b2) -- (a2) -- (b3) -- (b4) -- (b1);
+        \path[convexHull] (b2) -- (a2) -- (b3) -- (b4) -- (a3) -- (b2);
+        \path[convexHull] (a2) -- (b3) -- (b4) -- (a3) -- (b5) -- (a2);
+        \path[convexHull] (b3) -- (b4) -- (a3) -- (b5) -- (b6) -- (b3);
+        \path[convexHull] (b4) -- (a3) -- (b5) -- (b6) -- (a4) -- (b4);
+      
+        \draw[convexHullBord] (a1) -- (b3);
+        \draw[convexHullBord] (b1) -- (b4);
+        \draw[convexHullBord] (b2) -- (a3);
+        \draw[convexHullBord] (a2) -- (b5);
+        \draw[convexHullBord] (b3) -- (b6);
+        \draw[convexHullBord] (b4) -- (a4);
+      }
+
+      \draw[controlPoly] (a1) -- (a2) -- (a3) -- (a4);
+      \foreach \p in {a1,a2,a3,a4}
+      \filldraw[controlVert] (\p) circle (2pt);
+
+      \only<3->{
+        \foreach \p in {b1,b2,b3,b4,b5,b6}
+        \filldraw[controlVertHigh] (\p) circle (2pt);
+      }
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Postprocessing}
+  \begin{block}{Purpose}
+    \begin{itemize}
+    \item \alert{Simplify} the control polygon\pause
+    \item \alert{remove} useless turns
+    \end{itemize}
+  \end{block}\pause
+  \begin{itemize}
+  \item After Dijkstra\pause
+  \item For each triple \alert{$(a,b,c)$} of
+    consecutive points in path\pause
+  \item If no obstacles intersect the triangle\uncover<6->{ 
+    \alert{$\rightarrow$} the triple is simplified to a single edge \alert{$(a,c)$}}
+  \end{itemize}
+  \begin{center}
+    \begin{tikzpicture}
+      \coordinate (a) at (0,0);
+      \coordinate (b) at (2,2);
+      \coordinate (c) at (4,0);
+
+      \only<-5>{
+        \draw[controlPoly] (a) -- (b) -- (c);
+      
+        \filldraw[controlVert] (a) circle (2pt);
+        \filldraw[controlVert] (b) circle (2pt);
+        \filldraw[controlVert] (c) circle (2pt);
+      }
+      \only<6->{
+        \draw[controlPoly] (a) -- (c);
+      
+        \filldraw[controlVert] (a) circle (2pt);
+        \filldraw[controlVertHigh] (b) circle (2pt);
+        \filldraw[controlVert] (c) circle (2pt);
+      }
+    \end{tikzpicture}
+  \end{center}
+ \end{frame}
+
+\begin{frame}
+  \frametitle{Used technologies}
+  \begin{center}
+    \visible<1->{\includegraphics[width=4cm]{img/python3.png}}\\[1cm]
+    \visible<2->{\includegraphics[width=4cm]{img/scipy.png}}\\[1cm]
+    \visible<3->{\includegraphics[width=4cm]{img/vtk.png}}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Future improvements}
+  \begin{itemize}
+  \item Change underlying \alert{structure}\pause
+    \begin{itemize}
+    \item visibility graph\pause
+    \item rapidly exploring random tree (RRT)\pause
+    \item other \dots\pause
+    \end{itemize}
+  \item Improve \alert{postprocessing}\pause
+    \begin{itemize}
+    \item make a \alert{symmetric} algorithm (path from $a$ to $b$ $=$ path
+      from $b$ to $a$)\pause
+    \end{itemize}
+  \item Make \alert{optimization} process\pause
+    \begin{itemize}
+    \item try to find the best path that satisfy some constraints\pause
+      \begin{itemize}
+      \item max \alert{curvature}\pause
+      \item max \alert{torsion}\pause
+      \item others \dots
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \begin{center}
+	\textbf{\calligra\Huge The End.}\\
+  \includegraphics[width=5cm]{img/ornament.eps}\\[1cm]
+	\pause
+	{\huge\calligra Questions?\pause{} Thank you!}
+  \end{center}
+\end{frame}
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
