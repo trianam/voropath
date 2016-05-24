@@ -128,7 +128,15 @@ class Voronizator:
         self._pathEnd = end
 
         triPath = self._trijkstra(verbose, debug)
-        self._shortestPath = self._extractPath(triPath, postSimplify, verbose, debug)
+        shortestPath = self._extractPath(triPath, verbose, debug)
+        shortestPath = self._cleanPath(shortestPath, verbose, debug)
+        if postSimplify:
+            shortestPath = self._simplifyPath(shortestPath, verbose, debug)
+
+        shortestPath = self._increaseDegree(shortestPath, verbose, debug)
+            
+        self._shortestPath = shortestPath
+            
 
     def plotSites(self, plotter, verbose=False):
         if verbose:
@@ -378,102 +386,117 @@ class Voronizator:
 
         return triPath
 
-    def _extractPath(self, triPath, postSimplify, verbose, debug):
+    def _extractPath(self, triPath, verbose, debug):
         if verbose:
-            print('Adjust hits and construct path', flush=True)
+            print('Extract path', flush=True)
 
         path = []
-        for i,t in [(i,t) for i,t in enumerate(triPath)]:
-            if(t == self._startTriplet):
-                path.append(self._graph.node[self._startId]['coord'])
-            elif(t == self._endTriplet):
-                path.append(self._graph.node[self._endId]['coord'])
-            else:
-                a = self._tGraph.node[t]['triplet'][0]
-                v = self._tGraph.node[t]['triplet'][1]
-                b = self._tGraph.node[t]['triplet'][2]
-
-                intersect,intersectRes = self._triangleIntersectPolyhedrons(self._graph.node[a]['coord'], self._graph.node[v]['coord'], self._graph.node[b]['coord'])
-                if intersect:
-                    alpha = intersectRes[1]
-                    #adjust graph
-                    #a1,b1 for avoiding obstacle
-                    #a2,b2 for augmenting grade
-                    a1 = uuid.uuid4()
-                    b1 = uuid.uuid4()
-
-                    self._graph.add_node(a1, coord = (1.-alpha)*self._graph.node[a]['coord'] + alpha*self._graph.node[v]['coord'])
-                    self._graph.add_node(b1, coord = alpha*self._graph.node[v]['coord'] + (1.-alpha)*self._graph.node[b]['coord'])
-
-                    self._graph.remove_edge(a,v)
-                    self._graph.remove_edge(v,b)
-
-                    if self._bsplineDegree <= 2:
-                        self._graph.add_edge(a,a1, weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[a1]['coord']))
-                        self._graph.add_edge(a1,v, weight=np.linalg.norm(self._graph.node[a1]['coord'] - self._graph.node[v]['coord']))
-                        self._graph.add_edge(v,b1, weight=np.linalg.norm(self._graph.node[v]['coord'] - self._graph.node[b1]['coord']))
-                        self._graph.add_edge(b1,b, weight=np.linalg.norm(self._graph.node[b1]['coord'] - self._graph.node[b]['coord']))
-
-                        path.append(self._graph.node[a1]['coord'])
-                        path.append(self._graph.node[v]['coord'])
-                        path.append(self._graph.node[b1]['coord'])
-
-                    elif self._bsplineDegree == 4:
-                        a2 = uuid.uuid4()
-                        b2 = uuid.uuid4()
-                        self._graph.add_node(a2, coord = 0.25*self._graph.node[a1]['coord'] + 0.75*self._graph.node[v]['coord'])
-                        self._graph.add_node(b2, coord = 0.25*self._graph.node[b1]['coord'] + 0.75*self._graph.node[v]['coord'])
-
-                        self._graph.add_edge(a,a1, weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[a1]['coord']))
-                        self._graph.add_edge(a1,a2, weight=np.linalg.norm(self._graph.node[a1]['coord'] - self._graph.node[a2]['coord']))
-                        self._graph.add_edge(a2,v, weight=np.linalg.norm(self._graph.node[a2]['coord'] - self._graph.node[v]['coord']))
-                        self._graph.add_edge(v,b2, weight=np.linalg.norm(self._graph.node[v]['coord'] - self._graph.node[b2]['coord']))
-                        self._graph.add_edge(b2,b1, weight=np.linalg.norm(self._graph.node[b2]['coord'] - self._graph.node[b1]['coord']))
-                        self._graph.add_edge(b1,b, weight=np.linalg.norm(self._graph.node[b1]['coord'] - self._graph.node[b]['coord']))
-
-                        path.append(self._graph.node[a1]['coord'])
-                        path.append(self._graph.node[a2]['coord'])
-                        path.append(self._graph.node[v]['coord'])
-                        path.append(self._graph.node[b2]['coord'])
-                        path.append(self._graph.node[b1]['coord'])
-
-                    #adjust next triple
-                    if i < len(triPath)-1:
-                        self._tGraph.node[triPath[i+1]]['triplet'][0] = b1
-
-                else:
-                    if postSimplify:
-                        #delete triple
-                        if i < len(triPath)-1:
-                            self._tGraph.node[triPath[i+1]]['triplet'][0] = a
-                            self._graph.add_edge(a,self._tGraph.node[triPath[i+1]]['triplet'][1], weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[self._tGraph.node[triPath[i+1]]['triplet'][1]]['coord']))
-
-                    else:
-                        if self._bsplineDegree <= 2:
-                            path.append(self._graph.node[v]['coord'])
-                        elif self._bsplineDegree == 4:
-                            #a1,b1 for augmenting grade
-                            a1 = uuid.uuid4()
-                            b1 = uuid.uuid4()
-
-                            self._graph.add_node(a1, coord = 0.25*self._graph.node[a]['coord'] + 0.75*self._graph.node[v]['coord'])
-                            self._graph.add_node(b1, coord = 0.25*self._graph.node[b]['coord'] + 0.75*self._graph.node[v]['coord'])
-
-                            self._graph.remove_edge(a,v)
-                            self._graph.remove_edge(v,b)
-
-                            self._graph.add_edge(a,a1, weight=np.linalg.norm(self._graph.node[a]['coord'] - self._graph.node[a1]['coord']))
-                            self._graph.add_edge(a1,v, weight=np.linalg.norm(self._graph.node[a1]['coord'] - self._graph.node[v]['coord']))
-                            self._graph.add_edge(v,b1, weight=np.linalg.norm(self._graph.node[v]['coord'] - self._graph.node[b1]['coord']))
-                            self._graph.add_edge(b1,b, weight=np.linalg.norm(self._graph.node[b1]['coord'] - self._graph.node[b]['coord']))
-
-                            #adjust next triple
-                            if i < len(triPath)-1:
-                                self._tGraph.node[triPath[i+1]]['triplet'][0] = b1
-
-                            path.append(self._graph.node[a1]['coord'])
-                            path.append(self._graph.node[v]['coord'])
-                            path.append(self._graph.node[b1]['coord'])
-
-        #path = [self._graph.node[self._tGraph.node[n]['triplet'][1]]['coord'] for n in triPath]
+        for t in triPath:
+            path.append(self._graph.node[self._tGraph.node[t]['triplet'][1]]['coord'])
         return np.array(path)
+
+    def _cleanPath(self, path, verbose, debug):
+        if verbose:
+            print('Clean path (avoid obstacles)', flush=True)
+
+        newPath = []
+        if len(path) > 0:
+            a = path[0]
+            newPath.append(path[0])
+
+        for i in range(1, len(path)-1):
+            v = path[i]
+            b = path[i+1]
+
+            intersect,intersectRes = self._triangleIntersectPolyhedrons(a, v, b)
+            if intersect:
+                alpha = intersectRes[1]
+
+                a1 = (1.-alpha)*a + alpha*v
+                b1 = alpha*v + (1.-alpha)*b
+
+                newPath.append(a1)
+                newPath.append(v)
+                newPath.append(b1)
+
+                a = b1
+            else:
+                newPath.append(v)
+
+                a = v
+
+        if len(path) > 0:
+            newPath.append(path[len(path)-1])
+
+        return np.array(newPath)
+
+
+    def _simplifyPath(self, path, verbose, debug):
+        if verbose:
+            print('Simplify path (remove useless triples)', flush=True)
+
+        simplifiedPath = []
+        if len(path) > 0:
+            a = path[0]
+            simplifiedPath.append(path[0])
+        first = True
+        for i in range(1,len(path)-1):
+            v = path[i]
+            b = path[i+1]
+            keepV = False
+
+            intersectCurr,nihil = self._triangleIntersectPolyhedrons(a, v, b)
+
+            if not intersectCurr:
+                if first:
+                    intersectPrec = False
+                else:
+                    a1 = path[i-2]
+                    intersectPrec,nihil = self._triangleIntersectPolyhedrons(a1, a, b)
+
+                if i == len(path)-2:
+                    intersectSucc = False
+                else:
+                    b1 = path[i+2]
+                    intersectSucc,nihil = self._triangleIntersectPolyhedrons(a, b, b1)
+
+                if intersectPrec or intersectSucc:
+                    keepV = True
+
+            else:
+                keepV = True
+
+            if keepV:
+                first = False
+                simplifiedPath.append(v)
+                a = v
+
+        if len(path) > 0:
+            simplifiedPath.append(path[len(path)-1])
+
+        return np.array(simplifiedPath)
+            
+    def _increaseDegree(self, path, verbose, debug):
+        if verbose:
+            print('Increase degree', flush=True)
+
+        if self._bsplineDegree == 4:
+            newPath = []
+            for i in range(1, len(path)):
+                a = path[i-1]
+                b = path[i]
+                n1 = 0.33 * a + 0.67 * b
+                n2 = 0.33 * b + 0.67 * a
+                newPath.append(a)
+                newPath.append(n1)
+                newPath.append(n2)
+
+            if len(path) > 0:
+                newPath.append(path[len(path)-1])
+
+            return np.array(newPath)
+
+        else:
+            return path
+
+    
