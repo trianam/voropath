@@ -502,7 +502,7 @@ def dijkstra(graph, start, end):
   \begin{block}{Purpose}
     \begin{itemize}
     \item \alert{Simplify} the control polygon\pause
-    \item \alert{remove} useless turns
+    \item \alert{Remove} useless turns
     \end{itemize}
   \end{block}\pause
   \begin{itemize}
@@ -510,7 +510,10 @@ def dijkstra(graph, start, end):
   \item For each triple \alert{$(a,b,c)$} of
     consecutive points in path\pause
   \item If no obstacles intersect the triangle\uncover<6->{ 
-    \alert{$\rightarrow$} the triple is simplified to a single edge \alert{$(a,c)$}}
+      \alert{$\rightarrow$} the triple is simplified to a single edge
+      \alert{$(a,c)$}}
+  \uncover<7->{\item[\hmark] After simplification, \alert{new} neighbouring triples need to
+    be obstacle-free}
   \end{itemize}
   \begin{center}
     \begin{tikzpicture}
