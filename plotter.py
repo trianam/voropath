@@ -206,16 +206,18 @@ class Plotter:
         #[knots, coeff, degree]
         tck = [t,[x,y,z], degree]
 
-        u=np.linspace(0,1,(max(polLen*100,100)),endpoint=True)
+        u=np.linspace(0,1,(max(polLen*10,100)),endpoint=True)
         out = sp.interpolate.splev(u, tck)
         outD1 = sp.interpolate.splev(u, tck, 1)
         outD2 = sp.interpolate.splev(u, tck, 2)
-        outD3 = sp.interpolate.splev(u, tck, 3)
 
         spline = np.stack(out).T
         splineD1 = np.stack(outD1).T
         splineD2 = np.stack(outD2).T
-        splineD3 = np.stack(outD3).T
+
+        if degree >= 3:
+            outD3 = sp.interpolate.splev(u, tck, 3)
+            splineD3 = np.stack(outD3).T
 
         curvPlotActor = vtk.vtkXYPlotActor()
         curvPlotActor.SetTitle("Curvature")
@@ -245,10 +247,14 @@ class Plotter:
             Nd1Xd2 = np.linalg.norm(d1Xd2)
             
             currCurv = Nd1Xd2 / math.pow(np.linalg.norm(splineD1[i]),3)
-            try:
-                currTors = np.dot(d1Xd2, splineD3[i]) / math.pow(Nd1Xd2, 2)
-            except RuntimeWarning:
-                currTors = 0
+            
+            if degree >= 3:
+                try:
+                    currTors = np.dot(d1Xd2, splineD3[i]) / math.pow(Nd1Xd2, 2)
+                except RuntimeWarning:
+                    currTors = 0.
+            else:
+                currTors = 0.
 
             #currTors = np.linalg.det(np.stack([splineD1[i], splineD2[i], splineD3[i]]).T) / math.pow(np.linalg.norm(np.cross(splineD1[i], splineD2[i])), 2)
             uArray.InsertNextValue(u[i])

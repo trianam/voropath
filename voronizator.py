@@ -133,7 +133,8 @@ class Voronizator:
         if postSimplify:
             shortestPath = self._simplifyPath(shortestPath, verbose, debug)
 
-        shortestPath = self._increaseDegree(shortestPath, verbose, debug)
+        if self._bsplineDegree == 4:
+            shortestPath = self._add2AlignedVertexes(shortestPath, verbose, debug)
             
         self._shortestPath = shortestPath
             
@@ -476,27 +477,22 @@ class Voronizator:
 
         return np.array(simplifiedPath)
             
-    def _increaseDegree(self, path, verbose, debug):
+    def _add2AlignedVertexes(self, path, verbose, debug):
         if verbose:
             print('Increase degree', flush=True)
 
-        if self._bsplineDegree == 4:
-            newPath = []
-            for i in range(1, len(path)):
-                a = path[i-1]
-                b = path[i]
-                n1 = 0.33 * a + 0.67 * b
-                n2 = 0.33 * b + 0.67 * a
-                newPath.append(a)
-                newPath.append(n1)
-                newPath.append(n2)
+        newPath = []
+        for i in range(1, len(path)):
+            a = path[i-1]
+            b = path[i]
+            n1 = 0.33 * a + 0.67 * b
+            n2 = 0.33 * b + 0.67 * a
+            newPath.append(a)
+            newPath.append(n1)
+            newPath.append(n2)
 
-            if len(path) > 0:
-                newPath.append(path[len(path)-1])
+        if len(path) > 0:
+            newPath.append(path[len(path)-1])
 
-            return np.array(newPath)
-
-        else:
-            return path
-
+        return np.array(newPath)
     
