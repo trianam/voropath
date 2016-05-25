@@ -22,7 +22,7 @@ class Plotter:
     COLOR_PLOT_TORS = vtk.util.colors.red
 
     _DEFAULT_LINE_THICKNESS = 0.05
-    _DEFAULT_POINT_THICKNESS = 0.1
+    _DEFAULT_POINT_THICKNESS = 0.2
     _DEFAULT_BSPLINE_THICKNESS = 0.1
 
     def __init__(self):
@@ -242,25 +242,43 @@ class Plotter:
 
         curvTorsArray = vtk.vtkDoubleArray()
 
+        #minCurv = minTors = minNd1Xd2 = float("inf")
+        #maxCurv = maxTors = float("-inf")
+        
         for i in range(len(u)):
             d1Xd2 = np.cross(splineD1[i], splineD2[i])
             Nd1Xd2 = np.linalg.norm(d1Xd2)
-            
-            currCurv = Nd1Xd2 / math.pow(np.linalg.norm(splineD1[i]),3)
-            
-            if degree >= 3:
+            Nd1 = np.linalg.norm(splineD1[i])
+
+            currCurv = 0.
+            if Nd1 >= 1.:
+                currCurv = Nd1Xd2 / math.pow(Nd1,3)
+
+            currTors = 0.
+            if degree >= 3 and Nd1Xd2 >= 1.:
                 try:
                     currTors = np.dot(d1Xd2, splineD3[i]) / math.pow(Nd1Xd2, 2)
                 except RuntimeWarning:
                     currTors = 0.
-            else:
-                currTors = 0.
+
+            # if Nd1Xd2 < minNd1Xd2:
+            #     minNd1Xd2 = Nd1Xd2
+            # if currCurv < minCurv:
+            #     minCurv = currCurv
+            # if currCurv > maxCurv:
+            #     maxCurv = currCurv
+            # if currTors < minTors:
+            #     minTors = currTors
+            # if currTors > maxTors:
+            #     maxTors = currTors
 
             #currTors = np.linalg.det(np.stack([splineD1[i], splineD2[i], splineD3[i]]).T) / math.pow(np.linalg.norm(np.cross(splineD1[i], splineD2[i])), 2)
             uArray.InsertNextValue(u[i])
             curvArray.InsertNextValue(currCurv)
             torsArray.InsertNextValue(currTors)
             curvTorsArray.InsertNextValue(currCurv + abs(currTors))
+
+        #print("minCurv: {:e}; maxCurv: {:e}; minTors: {:e}; maxTors: {:e}; minNd1Xd2: {:e}".format(minCurv, maxCurv, minTors, maxTors, minNd1Xd2))
 
         plotTable = vtk.vtkTable()
         plotTable.AddColumn(uArray)
