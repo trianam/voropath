@@ -25,6 +25,30 @@ class Plotter:
     _DEFAULT_POINT_THICKNESS = 0.2
     _DEFAULT_BSPLINE_THICKNESS = 0.1
 
+    class KeyPressInteractorStyle(vtk.vtkInteractorStyleUnicam):
+        _screenshotFile = "/tmp/screenshot.png"
+        def __init__(self, parent=None):
+            self.AddObserver("KeyPressEvent",self._keyPressEvent)
+            #super(KeyPressInteractorStyle, self).__init__()
+
+        def SetRenderWindow(self, renderWindow):
+            self._renderWindow = renderWindow
+
+        def _keyPressEvent(self, obj, event):
+            if obj.GetInteractor().GetKeySym() == "l":
+                print("Screenshot in "+self._screenshotFile)
+                w2if = vtk.vtkWindowToImageFilter()
+                w2if.SetInput(self._renderWindow)
+                w2if.Update()
+ 
+                writer = vtk.vtkPNGWriter()
+                writer.SetFileName(self._screenshotFile)
+                writer.SetInputData(w2if.GetOutput())
+                writer.Write()
+
+            self.OnKeyPress()
+            
+
     def __init__(self):
         self._rendererScene = vtk.vtkRenderer()
         self._rendererScene.SetBackground(self.COLOR_BG)
@@ -33,7 +57,9 @@ class Plotter:
         self._renderWindowScene.AddRenderer(self._rendererScene)
         self._renderWindowInteractor = vtk.vtkRenderWindowInteractor()
         self._renderWindowInteractor.SetRenderWindow(self._renderWindowScene)
-        self._interactorStyle = vtk.vtkInteractorStyleUnicam()
+        #self._interactorStyle = vtk.vtkInteractorStyleUnicam()
+        self._interactorStyle = self.KeyPressInteractorStyle()
+        self._interactorStyle.SetRenderWindow(self._renderWindowScene)
 
         
         self._contextViewPlot = vtk.vtkContextView()
@@ -42,6 +68,8 @@ class Plotter:
         self._chartXY = vtk.vtkChartXY()
         self._contextViewPlot.GetScene().AddItem(self._chartXY)
         self._chartXY.SetShowLegend(True)
+
+        self._addedBSpline = False
         
     def draw(self):
         self._renderWindowInteractor.Initialize()
@@ -62,11 +90,14 @@ class Plotter:
         self._rendererScene.GetActiveCamera().SetViewUp((0.0,0.0,1.0))
 
         self._renderWindowScene.Render()
-        #self._renderWindowInteractor.Start()
 
-        self._contextViewPlot.GetRenderWindow().SetMultiSamples(0)
-        self._contextViewPlot.GetInteractor().Initialize()
-        self._contextViewPlot.GetInteractor().Start()
+        if self._addedBSpline:
+            self._contextViewPlot.GetRenderWindow().SetMultiSamples(0)
+            self._contextViewPlot.GetInteractor().Initialize()
+            self._contextViewPlot.GetInteractor().Start()
+        else:
+            self._renderWindowInteractor.Start()
+            
 
     def addTetrahedron(self, vertexes, color):
         vtkPoints = vtk.vtkPoints()
@@ -190,6 +221,8 @@ class Plotter:
         self._rendererScene.AddActor(actor)
 
     def addBSpline(self, controlPolygon, degree, adaptivePartition, color, thick=False, thickness=_DEFAULT_BSPLINE_THICKNESS):
+        self._addedBSpline = True
+        
         x = controlPolygon[:,0]
         y = controlPolygon[:,1]
         z = controlPolygon[:,2]

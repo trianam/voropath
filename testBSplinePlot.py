@@ -11,6 +11,6 @@ controlPolygon = np.array([[0.,0.,0.], [0.,6.,10.], [-1.,5.,2.], [-3.,8.,13.], [
 
 
 plt = plotter.Plotter()
-plt.addBSpline(controlPolygon, degree, plt.COLOR_PATH, thick=True)    
+plt.addBSpline(controlPolygon, degree, False, plt.COLOR_PATH, thick=True)    
 plt.draw()
 
