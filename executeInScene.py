@@ -6,7 +6,7 @@ import pickle
 import plotter
 
 if len(sys.argv) >= 2:
-    if len(sys.argv) == 6:
+    if len(sys.argv) == 7:
         i = 2
         startPoint = np.array(tuple(eval(sys.argv[i])),dtype=float)
         i += 1
@@ -15,11 +15,14 @@ if len(sys.argv) >= 2:
         bsplineDegree = int(sys.argv[i])
         i += 1
         postSimplify = bool(eval(sys.argv[i]))
+        i += 1
+        adaptivePartition = bool(eval(sys.argv[i]))
     else:
         startPoint = np.array(tuple(eval(input('Insert start point (x,y,z): '))),dtype=float)
         endPoint = np.array(tuple(eval(input('Insert end point (x,y,z): '))),dtype=float)
         bsplineDegree = int(input('Insert B-spline degree (2 or 4): '))
         postSimplify = bool(eval(input('Do you want to simplify path? (True/False): ')))
+        adaptivePartition = bool(eval(input('Do you want adaptive partition? (True/False): ')))
 
     print('Load file', flush=True)
     with open(sys.argv[1], 'rb') as f:
@@ -36,10 +39,10 @@ if len(sys.argv) >= 2:
     #voronoi.plotSites(plt, verbose = True)
     voronoi.plotPolyhedrons(plt, verbose = True)
     #voronoi.plotGraph(plt, verbose = True)
-    voronoi.plotShortestPath(plt, verbose = True)
+    voronoi.plotShortestPath(plt, adaptivePartition = adaptivePartition, verbose = True)
 
     print('Render', flush=True)
     plt.draw()
 
 else:
-    print('use: {} sceneFile [startPoint endPoint degree(2,4) simplify]'.format(sys.argv[0]))
+    print('use: {} sceneFile [startPoint endPoint degree(2,4) simplify adaptivePartition]'.format(sys.argv[0]))

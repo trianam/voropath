@@ -189,7 +189,7 @@ class Plotter:
 
         self._rendererScene.AddActor(actor)
 
-    def addBSpline(self, controlPolygon, degree, color, thick=False, thickness=_DEFAULT_BSPLINE_THICKNESS):
+    def addBSpline(self, controlPolygon, degree, adaptivePartition, color, thick=False, thickness=_DEFAULT_BSPLINE_THICKNESS):
         x = controlPolygon[:,0]
         y = controlPolygon[:,1]
         z = controlPolygon[:,2]
@@ -198,10 +198,10 @@ class Plotter:
         for i in range(1, len(controlPolygon)):
             polLen += sp.spatial.distance.euclidean(controlPolygon[i-1], controlPolygon[i])
 
-        l = len(x)
-        t = np.linspace(0,1,l-degree+1,endpoint=True)
-        t = np.append([0]*degree,t)
-        t = np.append(t,[1]*degree)
+        t = self._createExtendedPartition(controlPolygon, degree, adaptivePartition)
+        #print("controlPolygonA: {}".format(controlPolygon))
+        #print("T: {}".format(t))
+
 
         #[knots, coeff, degree]
         tck = [t,[x,y,z], degree]
@@ -402,3 +402,32 @@ class Plotter:
         actor.GetProperty().SetColor(color)
 
         self._rendererScene.AddActor(actor)
+
+    def _createExtendedPartition(self, controlPolygon, degree, adaptivePartition):
+        nv = len(controlPolygon)
+        nn = nv - degree + 1
+
+        if not adaptivePartition:
+            T = np.linspace(0,1,nv-degree+1,endpoint=True)
+        else:
+            d = [0]
+            for j in range(1, nv):
+                d.append(d[j-1] + np.linalg.norm(controlPolygon[j] - controlPolygon[j-1]))
+            t = []
+            for i in range(nn-1):
+                a = i * (nv-1) / (nn-1)
+                ai = math.floor(a)
+                ad = a - ai
+                p = ad * controlPolygon[ai+1] + (1-ad) * controlPolygon[ai]
+                l = d[ai] + np.linalg.norm(p - controlPolygon[ai])
+                t.append(l / d[nv-1])
+
+            t.append(1.)
+
+            T = np.array(t)
+
+        T = np.append([0]*degree, T)
+        T = np.append(T, [1]*degree)
+
+        return T
+    

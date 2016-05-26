@@ -160,14 +160,14 @@ class Voronizator:
         if verbose:
             print('', flush=True)
 
-    def plotShortestPath(self, plotter, verbose=False):
+    def plotShortestPath(self, plotter, adaptivePartition=False, verbose=False):
         if verbose:
             print('Plot shortest path', flush=True)
             
         if self._shortestPath.size > 0:
             plotter.addPolyLine(self._shortestPath, plotter.COLOR_CONTROL_POLIG, thick=True)
             plotter.addPoints(self._shortestPath, plotter.COLOR_CONTROL_POINTS, thick=True)
-            plotter.addBSpline(self._shortestPath, self._bsplineDegree, plotter.COLOR_PATH, thick=True)
+            plotter.addBSpline(self._shortestPath, self._bsplineDegree, adaptivePartition, plotter.COLOR_PATH, thick=True)
 
     def plotGraph(self, plotter, verbose=False):
         if verbose:
