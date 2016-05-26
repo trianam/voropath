@@ -88,6 +88,7 @@ class Plotter:
         camPos = self._rendererScene.GetActiveCamera().GetPosition()
         self._rendererScene.GetActiveCamera().SetPosition((camPos[2],camPos[1],camPos[0]))
         self._rendererScene.GetActiveCamera().SetViewUp((0.0,0.0,1.0))
+        self._rendererScene.GetActiveCamera().Zoom(1.4)
 
         self._renderWindowScene.Render()
 

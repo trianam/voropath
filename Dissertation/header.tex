@@ -33,6 +33,8 @@
 \usetikzlibrary{shapes, chains, scopes, shadows, positioning, arrows,
   decorations.pathmorphing, calc, mindmap, petri}
 
+\usepackage{cleveref}
+
 %comandi per modello
 %--------------------------------------------------------------
 \newcommand{\myTitle}{B-Spline methods for designing smooth spatial
@@ -108,7 +110,7 @@
   \begin{figure}
     \begin{center}
       \begin{tikzpicture}
-        \node [rectangle, rounded corners=2pt, inner sep = 0.3cm, drop shadow, draw=black!50, fill=yellow!20] {
+        \node [rectangle, rounded corners=2pt, inner sep = 0.3cm, drop shadow, draw=black!50, fill=white] {
           \IfNoValueTF{#1}
                       {\includegraphics[width=13cm]{#2}}
                       {\includegraphics[width=#1]{#2}}
@@ -124,7 +126,7 @@
   \begin{figure}
     \begin{center}
       \begin{tikzpicture}
-        \node [rectangle, rounded corners=2pt, inner sep = 0.3cm, drop shadow, draw=black!50, fill=yellow!20, rotate = 90] {
+        \node [rectangle, rounded corners=2pt, inner sep = 0.3cm, drop shadow, draw=black!50, fill=white, rotate = 90] {
           \IfNoValueTF{#1}
                       {\includegraphics[height=13cm]{#2}}
                       {\includegraphics[height=#1]{#2}}
