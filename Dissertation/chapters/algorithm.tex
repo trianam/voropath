@@ -1,19 +1,103 @@
 \documentclass[dissertation.tex]{subfiles}
 \begin{document}
 \chapter{Algorithm}
-In this chapter we analyze step-by-step the algorithm that implements
-the different parts of the program. We show the different parts of the
-algorithm with the help of the test scene in \cref{fig:empty}
+In this chapter we analyze step-by-step the algorithms that implements
+the different parts of the program. We do this with the help of the
+test scene in \cref{fig:empty}.
 \image{scrEmpty.png}{Initial scene.}{fig:empty}
-\section{Polygonal chain}
-We extract the 
-\image{scrSites.png}{Scene with Voronoi sites.}{fig:sites}
-\image{scrGraph.png}{Scene with Voronoi graph.}{fig:graph}
 
-\section{Obstacle avoidance}
+The general idea is to use a B-Spline of a certain degree that use as
+control polygon a polygonal chain extracted in a graph
+derived from a Voronoi diagram method and is clamped to the extremes
+of such polygon. In \cref{sec:polChain} we explain in detail how to
+build such polygonal chain. Before using the chain as a control
+polygon for the B-Spline, it is refined and adjusted - as explained in
+detail in \cref{sec:obsAvoid} and \cref{sec:degreeInc} - such that is
+possible to apply a B-Spline with the required degree that don't hit
+any obstacle. We implemented a method for an optional adaptive
+arrangment of the inner nodes of the B-Spline partition described in
+\cref{sec:nodeSel} and an optional post processing for the
+simplification of the path described in \cref{sec:postPro}.
+\section{Polygonal chain}\label{sec:polChain}
+In the first phase the objective is to extract a polygonal chain from
+the scene, such that the extremes coincides with the start point $s$
+and the end point $e$. For doing this we calculate the shortest path
+in a graph that is constructed using an adaptation to three
+dimensions of a well known bidimensional method (see
+\cite{bhattacharya}, \cite{ho-liu} and \cite{seda-pich}) that use
+Voronoi diagrams as base.
+
+First we
+start distributing points on the faces of the obstacles and on
+an invisible bounding box, as in \cref{fig:sites}.
+\image{scrSites.png}{Scene with Voronoi sites.}{fig:sites}
+The sites are distributes using a recursive method, for each triangle
+of the scene\footnote{The scene is composed exclusively of triangles,
+  see \cref{cha:scene} for details.} we add three points - one for each
+vertex, if not already added before - and then we calculate the area
+of the triangle, if the area is bigger than a threshold we decompose
+the triangle in four triangles adding three more vertexes on the
+midpoints of the edges of the original triangle as in
+\cref{fig:triangleDec}, and repeating the process recursively for
+each new triangle.
+\begin{myfig}{Decomposition of a triangle.}{fig:triangleDec}
+  \begin{tikzpicture}[scale=2]
+    \coordinate (a1) at (1,0);
+    \coordinate (b1) at (2,1);
+    \coordinate (c1) at (3,0.3);
+
+    \path[obstacle] (a1) -- (b1) -- (c1) -- (a1);
+
+    \coordinate (dist) at (3.5,0);
+    \coordinate (a2) at ($ (a1) + (dist) $);
+    \coordinate (b2) at ($ (b1) + (dist) $);
+    \coordinate (c2) at ($ (c1) + (dist) $);
+
+    \path[obstacle] (a2) -- (b2) -- (c2) -- (a2);
+    \foreach \p in {a1,b1,c1,a2,b2,c2}
+    \filldraw[site] (\p) circle (2pt); 
+
+    \coordinate (ab) at ($ (a2)!0.5!(b2) $);
+    \coordinate (bc) at ($ (b2)!0.5!(c2) $);
+    \coordinate (ac) at ($ (a2)!0.5!(c2) $);
+
+    \path[obstacleTract] (ab) -- (bc) -- (ac) -- (ab);
+
+    \foreach \p in {ab,bc,ac}
+    \filldraw[siteHigh] (\p) circle (2pt); 
+  \end{tikzpicture}
+\end{myfig}
+
+We construct the Voronoi diagram using
+those points as input sites, and we build a graph using the vertexes
+of the Voronoi cells as graph nodes, and the edges of the cells\footnote{Ignoring the
+  infinite edges.} as graph edges. After we prune such graph deleting every edge that
+intersect an obstacle face, using the methods explained in \cref{sec:intersections}.
+\image{scrGraph.png}{Scene with pruned graph.}{fig:graph}
+
+The result, visible in \cref{fig:graph}, is a graph that embrace the
+obstacles like a cobweb where the possible paths on it are roughly
+equidistant between the obstacles.
+
+In the bidimensional case the equivalent method implies distributing
+the sites in the edges of the polygonal obstacles and then pruning the
+graph when an edge of the graph intersect an edge of the obstacle as
+in \cref{fig:voronoi2d}.
+\image{voronoi2d.png}{Voronoi graph in 2D before pruning (a) and after
+  pruning (b).}{fig:voronoi2d}
+We decided to extend the method in 3 dimensions distributing points in
+the whole faces of obstacles, an alternative would be distributing
+points only along the edges of the obstacles.
+
+\section{Obstacle avoidance}\label{sec:obsAvoid}
 \subsection{First solution}
 \subsection{Second solution}
-\section{Nodes selection}
-\section{Degree increase}
-\section{Post processing}
+\section{Post processing}\label{sec:postPro}
+\section{Degree increase}\label{sec:degreeInc}
+\section{Nodes selection}\label{sec:nodeSel}
 \end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../dissertation"
+%%% End:

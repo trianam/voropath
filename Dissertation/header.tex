@@ -105,6 +105,16 @@
 \newcommand{\cods}[1]{\dims\unicocodet{#1}}
 %  \lstinline[basicstyle=\dims\ttfamily\bfseries,breaklines=true]|#1|
 
+\NewDocumentEnvironment{myfig}{mm}{
+  \begin{figure}
+    \begin{center}
+    }{
+    \end{center}
+    \caption{#1}
+    \label{#2}
+  \end{figure}
+}
+
 %comando per inserire una immagine
 \NewDocumentCommand{\image}{ommm}{
   \begin{figure}
@@ -154,8 +164,15 @@
 \tikzstyle{convexHull}=[fill=blue!30]
 \tikzstyle{convexHullBord}=[color=black, dash pattern=on 3pt off 3pt]
 \tikzstyle{controlPoly}=[color=black, line width=0.25mm]
+\tikzstyle{controlPolyTract}=[color=black, line width=0.25mm, dash
+pattern=on 3pt off 3pt]
+\tikzstyle{obstacleTract}=[draw=black, line width=0.25mm, dash
+pattern=on 3pt off 3pt]
 \tikzstyle{spline}=[color=red, line width=0.5mm]
 \tikzstyle{controlVert}=[color=green, draw=black]
+\tikzstyle{controlVertHigh}=[color=red, draw=black]
+\tikzstyle{site}=[color=blue, draw=black]
+\tikzstyle{siteHigh}=[color=red, draw=black]
 \tikzstyle{textArrow}=[draw=red, line width=0.5mm, ->]
 
 \colorlet{mmcb}{black!70}
