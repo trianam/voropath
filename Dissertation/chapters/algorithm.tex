@@ -6,16 +6,16 @@ the different parts of the program. We do this with the help of the
 test scene in \cref{fig:empty}.
 \image{scrEmpty.png}{Initial scene.}{fig:empty}
 
-The general idea is to use a B-Spline of a certain degree that use as
+The general idea is to use a B-spline of a certain degree that use as
 control polygon a polygonal chain extracted in a graph
 derived from a Voronoi diagram method and is clamped to the extremes
 of such polygon. In \cref{sec:polChain} we explain in detail how to
 build such polygonal chain. Before using the chain as a control
-polygon for the B-Spline, it is refined and adjusted - as explained in
+polygon for the B-spline, it is refined and adjusted - as explained in
 detail in \cref{sec:obsAvoid} and \cref{sec:degreeInc} - such that is
-possible to apply a B-Spline with the required degree that don't hit
+possible to apply a B-spline with the required degree that don't hit
 any obstacle. We implemented a method for an optional adaptive
-arrangment of the inner nodes of the B-Spline partition described in
+arrangment of the inner nodes of the B-spline partition described in
 \cref{sec:nodeSel} and an optional post processing for the
 simplification of the path described in \cref{sec:postPro}.
 \section{Polygonal chain}\label{sec:polChain}
@@ -89,9 +89,62 @@ We decided to extend the method in 3 dimensions distributing points in
 the whole faces of obstacles, an alternative would be distributing
 points only along the edges of the obstacles.
 
+On the graph obtained from Voronoi we attach the desired start and end
+points, and we can obtain a path between the two points using an
+algorithm like Dijkstra. Before using that path as a control polygon
+we need to take into account the degree of the B-spline and the
+position of the obstacles, the details are in \cref{sec:obsAvoid} and
+\cref{sec:degreeInc}.
+
 \section{Obstacle avoidance}\label{sec:obsAvoid}
-\subsection{First solution}
-\subsection{Second solution}
+Before using the algorithm explained in \cref{sec:polChain} for
+extracting a control polygon for the B-spline, we need to deal with a
+problem: every possible path in the graph is
+free from collisions by construction - in fact we prune the graph of
+every edge that intersect an obstacle - but this don't guarantees that
+the curve will be free from obstacles. This concept is expressed in \cref{fig:intersect}.
+\begin{myfig}{Schematic of B-spline that intersect an obstacle in the plane.}{fig:intersect}
+  \begin{tikzpicture}
+    \path[obstacle] (1,0) -- (2,1) -- (3,0) -- (1,0);
+    \draw[controlPoly] (0,0) -- (2,2) -- (4,0);
+    \draw[spline] (0,0) to [bend left=40] (4,0);
+
+    \filldraw[controlVert] (0,0) circle (2pt);
+    \filldraw[controlVert] (2,2) circle (2pt);
+    \filldraw[controlVert] (4,0) circle (2pt);
+  \end{tikzpicture}
+\end{myfig}
+
+In this chapter we make the hypothesis of using
+quadratic B-splines\footnote{Degree 2, order 3.}, in
+\cref{sec:degreeInc} is explained how is possible to use curves with
+higher degree. With this assumption we can exploit the convex hull
+property explained in \cref{sec:bsplineProp} and assert that the
+resulting curve is contained inside the union of all the triangles
+composed of three consecutive control vertexes of the control
+polygon. Using that property we can resolve the problem of the
+collision maintaining all the triangles in the control polygon free
+from collision with the triangles that compose the faces of the
+obstacles. Note that the property of convex hull of quadratic
+B-splines is valid also in space, so the convex hull is still composed
+of planar figures - specifically of triangles - like the faces of the
+obstacles. This simplify all the check for the collisions because they
+are all between triangles in space and we can use the methods
+described in \cref{sec:intersections}.
+
+We designed two different algorithms for dealing with the collision
+problem. The first solution described in \cref{sec:inter1} implements
+a modified version of Dijkstra's
+algorithm that find the shortest path from start to end in the graph
+such that all the triangles formed of consecutive points in such path
+are free from collisions. The second solution described in
+\cref{sec:inter2} use the classical Dijkstra's algorithm for finding
+the shortest path from start to end in the graph, later check for
+collisions in the triangles formed of consecutive points in such path
+and when a collision is found some actions are taken for dealing with
+the collision.
+\subsection{First solution}\label{sec:inter1}
+\subsection{Second solution}\label{sec:inter2}
 \section{Post processing}\label{sec:postPro}
 \section{Degree increase}\label{sec:degreeInc}
 \section{Nodes selection}\label{sec:nodeSel}
