@@ -112,7 +112,7 @@ class Voronizator:
 
         self._createTripleGraph(verbose, debug)
 
-    def calculateShortestPath(self, start, end, attachMode='near', prune=True, postSimplify=True, verbose=False, debug=False):
+    def calculateShortestPath(self, start, end, attachMode='near', prune=True, useTrijkstra=False, postSimplify=True, verbose=False, debug=False):
         if verbose:
             print('Attach start and end points', flush=True)
         if attachMode=='near':
@@ -127,12 +127,18 @@ class Voronizator:
         self._pathStart = start
         self._pathEnd = end
 
-        triPath = self._trijkstra(verbose, debug)
+        if useTrijkstra:
+            self._removeCollidingTriples(verbose, debug)
+
+        triPath = self._dijkstra(verbose, debug)
         shortestPath = self._extractPath(triPath, verbose, debug)
-        shortestPath = self._cleanPath(shortestPath, verbose, debug)
+
+        if not useTrijkstra:
+            shortestPath = self._cleanPath(shortestPath, verbose, debug)
         if postSimplify:
             shortestPath = self._simplifyPath(shortestPath, verbose, debug)
 
+        print(self._bsplineDegree)
         if self._bsplineDegree == 3:
             shortestPath = self._addNAlignedVertexes(1, shortestPath, verbose, debug)        
         if self._bsplineDegree == 4:
@@ -165,9 +171,19 @@ class Voronizator:
             print('Plot shortest path', flush=True)
             
         if self._shortestPath.size > 0:
-            plotter.addPolyLine(self._shortestPath, plotter.COLOR_CONTROL_POLIG, thick=True)
-            plotter.addPoints(self._shortestPath, plotter.COLOR_CONTROL_POINTS, thick=True)
-            plotter.addBSpline(self._shortestPath, self._bsplineDegree, adaptivePartition, plotter.COLOR_PATH, thick=True)
+            if self._hasBoundingBox:
+                splineThickness = np.linalg.norm(np.array(self._boundingBoxB) - np.array(self._boundingBoxA)) / 1000.
+                pointThickness = splineThickness * 2.
+                lineThickness = splineThickness / 2.
+                
+                plotter.addPolyLine(self._shortestPath, plotter.COLOR_CONTROL_POLIG, thick=True, thickness=lineThickness)
+                plotter.addPoints(self._shortestPath, plotter.COLOR_CONTROL_POINTS, thick=True, thickness=pointThickness)
+                plotter.addBSpline(self._shortestPath, self._bsplineDegree, adaptivePartition, plotter.COLOR_PATH, thick=True, thickness=splineThickness)
+
+            else:
+                plotter.addPolyLine(self._shortestPath, plotter.COLOR_CONTROL_POLIG, thick=True)
+                plotter.addPoints(self._shortestPath, plotter.COLOR_CONTROL_POINTS, thick=True)
+                plotter.addBSpline(self._shortestPath, self._bsplineDegree, adaptivePartition, plotter.COLOR_PATH, thick=True)
 
     def plotGraph(self, plotter, verbose=False):
         if verbose:
@@ -375,7 +391,7 @@ class Voronizator:
             triplets_file.close()
 
 
-    def _trijkstra(self, verbose, debug):
+    def _dijkstra(self, verbose, debug):
         try:
             if verbose:
                 print('Dijkstra algorithm', flush=True)
@@ -389,6 +405,31 @@ class Voronizator:
 
         return triPath
 
+    def _removeCollidingTriples(self, verbose, debug):
+        if verbose:
+            print('Remove colliding triples', flush=True)
+            printDotBunch = 0
+
+        toRemove = []
+        for triple in self._tGraph:
+            if verbose:
+                if printDotBunch == 0:
+                    print('.', end='', flush=True)
+                printDotBunch = (printDotBunch+1)%10
+
+            a = self._graph.node[self._tGraph.node[triple]['triplet'][0]]['coord']
+            b = self._graph.node[self._tGraph.node[triple]['triplet'][1]]['coord']
+            c = self._graph.node[self._tGraph.node[triple]['triplet'][2]]['coord']
+            intersect,intersectRes = self._triangleIntersectPolyhedrons(a, b, c)
+            if intersect:
+                toRemove.append(triple)
+                
+        if verbose:
+            print ("", flush=True)
+
+        for triple in toRemove:
+            self._tGraph.remove_node(triple)
+    
     def _extractPath(self, triPath, verbose, debug):
         if verbose:
             print('Extract path', flush=True)

@@ -6,7 +6,7 @@ import tetrahedron
 import uuid
 import plotter
 
-voronoi = voronizator.Voronizator()
+voronoi = voronizator.Voronizator(bsplineDegree=2)
 
 voronoi.addPolyhedron(tetrahedron.Tetrahedron(a = [0.1,0.1,0.1], b = [0.3,0.3,0.1], c = [0.4,0.2,0.2], d = [0.1,0.2,0.2]))
 
@@ -112,13 +112,21 @@ voronoi._graph.add_edge(aId, bId, weight=np.linalg.norm(a-b))
 
 
 #calculate test shortest path
-voronoi._pathStart = np.array([0.,0.,0.])
-voronoi._pathEnd = np.array([1.,1.,1.])
-voronoi._startId = startId
-voronoi._endId = endId
+#voronoi._pathStart = np.array([0.,0.,0.])
+#voronoi._pathEnd = np.array([1.,1.,1.])
+#voronoi._startId = startId
+#voronoi._endId = endId
+
+voronoi._hasBoundingBox = True
+voronoi._boundingBoxA = np.array([-0.1, -0.1, -0.1])
+voronoi._boundingBoxB = np.array([1.1, 1.1, 1.1])
+
+
+voronoi._createTripleGraph(True, False)
+voronoi.calculateShortestPath(np.array([0.,0.,0.]), np.array([1.,1.,1.]), attachMode='near', prune=True, useTrijkstra=False, postSimplify=False, verbose=True, debug=False)
 
 #voronoi._shortestPath = voronoi._dijkstraPlus(voronoi._pathStart, voronoi._pathEnd)
-voronoi._shortestPath = voronoi._extractPath(voronoi._trijkstra(True, False), False, True, False)
+#voronoi._shortestPath = voronoi._extractPath(voronoi._trijkstra(True, False), False, True, False)
 
 
 #plot
