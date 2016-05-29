@@ -2,6 +2,7 @@ import numpy as np
 import scipy as sp
 import scipy.interpolate
 import scipy.spatial
+import pickle
 import vtk
 import vtk.util.colors
 import math
@@ -27,9 +28,13 @@ class Plotter:
 
     class KeyPressInteractorStyle(vtk.vtkInteractorStyleUnicam):
         _screenshotFile = "/tmp/screenshot.png"
+        _cameraFile = "./cameraData.dat"
         def __init__(self, parent=None):
             self.AddObserver("KeyPressEvent",self._keyPressEvent)
             #super(KeyPressInteractorStyle, self).__init__()
+
+        def SetCamera(self, camera):
+            self._camera = camera
 
         def SetRenderWindow(self, renderWindow):
             self._renderWindow = renderWindow
@@ -46,6 +51,33 @@ class Plotter:
                 writer.SetInputData(w2if.GetOutput())
                 writer.Write()
 
+            elif obj.GetInteractor().GetKeySym() == "c":
+                print("Save camera data in "+self._cameraFile)
+                record = {}
+                record['position'] = self._camera.GetPosition()
+                record['focalPoint'] = self._camera.GetFocalPoint()
+                record['viewAngle'] = self._camera.GetViewAngle()
+                record['viewUp'] = self._camera.GetViewUp()
+                record['clippingRange'] = self._camera.GetClippingRange()
+
+                with open(self._cameraFile, 'wb') as f:
+                    pickle.dump(record, f)
+
+            elif obj.GetInteractor().GetKeySym() == "v":
+                print("Restore camera data from "+self._cameraFile)
+
+                with open(self._cameraFile, 'rb') as f:
+                    record = pickle.load(f)
+
+                    self._camera.SetPosition(record['position'])
+                    self._camera.SetFocalPoint(record['focalPoint'])
+                    self._camera.SetViewAngle(record['viewAngle'])
+                    self._camera.SetViewUp(record['viewUp'])
+                    self._camera.SetClippingRange(record['clippingRange'])
+
+                    self._renderWindow.Render()
+
+
             self.OnKeyPress()
             
 
@@ -59,6 +91,7 @@ class Plotter:
         self._renderWindowInteractor.SetRenderWindow(self._renderWindowScene)
         #self._interactorStyle = vtk.vtkInteractorStyleUnicam()
         self._interactorStyle = self.KeyPressInteractorStyle()
+        self._interactorStyle.SetCamera(self._rendererScene.GetActiveCamera())
         self._interactorStyle.SetRenderWindow(self._renderWindowScene)
 
         
