@@ -96,6 +96,43 @@ we need to take into account the degree of the B-spline and the
 position of the obstacles, the details are in \cref{sec:obsAvoid} and
 \cref{sec:degreeInc}.
 
+\subsection{Triple's graph}\label{sec:trigraph}
+In detail before calculating the shortest path with Dijkstra, we
+transform the graph of vertexes in a graph containing all the triples
+of three adjacent vertexes in the original graph. This because we want
+to filter the triples for collisions as described in
+\cref{sec:inter1}. The original graph is not directed and weighted
+with the distance from vertex to vertex. The transformed graph is
+directed and weighted, where if in the original graph the nodes $A$
+and $B$ are
+neighbouring, and the nodes $B$ and $C$ are neighbouring, then the
+transformed graph have the two nodes $(A,B,C)$ and $(C,B,A)$. In
+the transformed graph a node $(A_1,B_1,C_1)$ is a predecessor of
+$(A_2,B_2,C_2)$ if $B_1=A_2$ and $C_1=B_2$, and the weight of the arc
+from $(A_1,B_1,C_1)$ to $(A_2,B_2,C_2)$ in the transformed graph is
+equal to
+the weight of the arc from $A_1$ to $B_1(=A_2)$ in the original
+graph.
+
+On the transformed graph is possible to find the shortest path on the
+triples
+$$
+(A_0,B_0,C_0), (A_1,B_1,C_1),\dots,(A_i,B_i,C_i),\dots,(A_n,B_n,C_n)
+$$
+ using
+an algorithm like Dijkstra as usual, and then extracting the shortest
+path on the vertexes taking the central vertex $B_i$ of every
+triple $(A_i,B_i,C_i)$ of the path plus the extremes $A_0$ and $C_n$
+of the first and last triples, obtaining
+$$
+A_0,B_0,B_1,\dots,B_i,\dots,B_n,C_n.
+$$
+
+The transformation of the graph is useful only for the obstacle
+avoidance algorithm of
+\cref{sec:inter1}, theoretically is possible to bypass such
+transformation for the algorithm on \cref{sec:inter2}.
+
 \section{Obstacle avoidance}\label{sec:obsAvoid}
 Before using the algorithm explained in \cref{sec:polChain} for
 extracting a control polygon for the B-spline, we need to deal with a
@@ -144,11 +181,29 @@ collisions in the triangles formed of consecutive points in such path
 and when one is found some actions are taken for dealing with that.
 
 \subsection{First solution}\label{sec:inter1}
-The first solution of the collision problem is to take 
+The first solution of the problem exploit the triples obtained as
+explained in \cref{sec:trigraph}. Before applying Dijkstra's algorithm
+to the triple graph all the triples are filtered checking if the
+triangle composed of the vertexes of a triple intersect an obstacle's
+face. If a triple intersect an obstacle then is removed from the graph
+and so a path cannot pass from such vertexes in that order.
 \subsection{Second solution}\label{sec:inter2}
+The second solution of the problem use the shortest path obtained
+from the Voronoi's graph without removing any triple. On that path we
+check every triple of consecutive vertexes, and if it collides with an
+obstacle's face then we take countermeasures.
+
+In
+\cref{sec:intersection} we explain how to measure if a triangle
+collides with another triangle and that when a collision is found we
+obtain also the barycentric coordinates of the point were one of the
+segment of a triangle intersect the other triangle express in the
+vertexes of the second one. Apart this consider also that if we
+have the position of a point $p$.
 \section{Post processing}\label{sec:postPro}
 \section{Degree increase}\label{sec:degreeInc}
 \section{Nodes selection}\label{sec:nodeSel}
+\section{Complexity}
 \end{document}
 
 %%% Local Variables:

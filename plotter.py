@@ -28,7 +28,7 @@ class Plotter:
 
     class KeyPressInteractorStyle(vtk.vtkInteractorStyleUnicam):
         _screenshotFile = "/tmp/screenshot.png"
-        _cameraFile = "./cameraData.dat"
+        _cameraFile = "/tmp/cameraData.dat"
         def __init__(self, parent=None):
             self.AddObserver("KeyPressEvent",self._keyPressEvent)
             #super(KeyPressInteractorStyle, self).__init__()
