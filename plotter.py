@@ -41,7 +41,7 @@ class Plotter:
 
         def _keyPressEvent(self, obj, event):
             if obj.GetInteractor().GetKeySym() == "l":
-                print("Screenshot in "+self._screenshotFile)
+                print("Scene screenshot in "+self._screenshotFile)
                 w2if = vtk.vtkWindowToImageFilter()
                 w2if.SetInput(self._renderWindow)
                 w2if.Update()
@@ -79,8 +79,29 @@ class Plotter:
 
 
             self.OnKeyPress()
-            
 
+    class KeyPressContextInteractorStyle(vtk.vtkContextInteractorStyle):
+        _screenshotFile = "/tmp/screenshot.png"
+        def __init__(self, parent=None):
+            self.AddObserver("KeyPressEvent",self._keyPressEvent)
+
+        def SetRenderWindow(self, renderWindow):
+            self._renderWindow = renderWindow
+
+        def _keyPressEvent(self, obj, event):
+            if obj.GetInteractor().GetKeySym() == "l":
+                print("Plot screenshot in "+self._screenshotFile)
+                w2if = vtk.vtkWindowToImageFilter()
+                w2if.SetInput(self._renderWindow)
+                w2if.Update()
+ 
+                writer = vtk.vtkPNGWriter()
+                writer.SetFileName(self._screenshotFile)
+                writer.SetInputData(w2if.GetOutput())
+                writer.Write()
+
+
+            
     def __init__(self):
         self._rendererScene = vtk.vtkRenderer()
         self._rendererScene.SetBackground(self.COLOR_BG)
@@ -94,10 +115,12 @@ class Plotter:
         self._interactorStyle.SetCamera(self._rendererScene.GetActiveCamera())
         self._interactorStyle.SetRenderWindow(self._renderWindowScene)
 
-        
         self._contextViewPlot = vtk.vtkContextView()
         self._contextViewPlot.GetRenderer().SetBackground(self.COLOR_BG_PLOT)
 
+        self._contextInteractorStyle = self.KeyPressContextInteractorStyle()
+        self._contextInteractorStyle.SetRenderWindow(self._contextViewPlot.GetRenderWindow())
+        
         self._chartXY = vtk.vtkChartXY()
         self._contextViewPlot.GetScene().AddItem(self._chartXY)
         self._chartXY.SetShowLegend(True)
@@ -128,6 +151,7 @@ class Plotter:
         if self._addedBSpline:
             self._contextViewPlot.GetRenderWindow().SetMultiSamples(0)
             self._contextViewPlot.GetInteractor().Initialize()
+            self._contextViewPlot.GetInteractor().SetInteractorStyle(self._contextInteractorStyle)
             self._contextViewPlot.GetInteractor().Start()
         else:
             self._renderWindowInteractor.Start()
