@@ -187,6 +187,48 @@ to the triple graph all the triples are filtered checking if the
 triangle composed of the vertexes of a triple intersect an obstacle's
 face. If a triple intersect an obstacle then is removed from the graph
 and so a path cannot pass from such vertexes in that order.
+
+Note that if a triple $(A,B,C)$ is removed in the derived graph - and
+consequently also the triple $(C,B,A)$ - not necessarily this exclude
+the three vertexes $A$, $B$, $C$ from being part of the final
+polynomial chain. For instance\footnote{In the plane, this graph cannot be
+  obtained using the procedure based on Voronoi diagrams explained in
+  \cref{sec:polChain}, but a similar situation is plausible
+  considering Voronoi cells in space.} in
+\cref{fig:exampleTriples} the triple
+$(A,B,C)$ and $(C,B,A)$ cannot be part of the triples graph because
+the corresponding triangle intersect the obstacle, and the path
+$D\rightarrow A\rightarrow B\rightarrow C\rightarrow E$ cannot be an
+admissible path. This don't preclude the nodes $A$, $B$ and $C$ to be part
+of the final admissible path $D\rightarrow A\rightarrow B\rightarrow E\rightarrow C\rightarrow E$.
+\begin{myfig}{Example of triples.}{fig:exampleTriples}
+  \begin{tikzpicture}
+    \coordinate (D) at (-1,1);
+    \coordinate (A) at (0,0);
+    \coordinate (B) at (2,2);
+    \coordinate (C) at (4,0);
+    \coordinate (E) at (3,2);
+    \coordinate (F) at (5,1);
+    \path[obstacle] (1,-0.5) -- (2,1) -- (3,-0.5) -- (1,-0.5);
+    \draw[controlPoly] (D) -- (A) -- (B) -- (C) -- (F);
+    \draw[controlPoly] (B) -- (E) -- (C);
+
+    \filldraw[controlVert] (D) circle (2pt);
+    \filldraw[controlVert] (A) circle (2pt);
+    \filldraw[controlVert] (B) circle (2pt);
+    \filldraw[controlVert] (C) circle (2pt);
+    \filldraw[controlVert] (E) circle (2pt);
+    \filldraw[controlVert] (F) circle (2pt);
+
+    \node[above=0.5em] at (D) {$D$};
+    \node[below=0.5em] at (A) {$A$};
+    \node[above=0.5em] at (B) {$B$};
+    \node[below=0.5em] at (C) {$C$};
+    \node[above=0.5em] at (E) {$E$};
+    \node[above=0.5em] at (F) {$F$};
+  \end{tikzpicture}
+\end{myfig}
+
 \subsection{Second solution}\label{sec:inter2}
 The second solution of the problem use the shortest path obtained
 from the Voronoi's graph without removing any triple. On that path we
@@ -194,7 +236,7 @@ check every triple of consecutive vertexes, and if it collides with an
 obstacle's face then we take countermeasures.
 
 In
-\cref{sec:intersection} we explain how to measure if a triangle
+\cref{sec:intersections} we explain how to measure if a triangle
 collides with another triangle and that when a collision is found we
 obtain also the barycentric coordinates of the point were one of the
 segment of a triangle intersect the other triangle express in the
