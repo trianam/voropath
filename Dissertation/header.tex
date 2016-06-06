@@ -122,13 +122,36 @@
       \begin{tikzpicture}
         \node [rectangle, rounded corners=2pt, inner sep = 0.3cm, drop shadow, draw=black!50, fill=white] {
           \IfNoValueTF{#1}
-                      {\includegraphics[width=13cm]{#2}}
+                      {\includegraphics[width=.9\textwidth]{#2}}
                       {\includegraphics[width=#1]{#2}}
         };
       \end{tikzpicture}
     \end{center}
     \caption{#3}
     \label{#4}
+  \end{figure}
+}
+
+\NewDocumentCommand{\imageDouble}{ommmm}{
+  \begin{figure}
+    \begin{center}
+      \begin{tikzpicture}
+        \node [rectangle, rounded corners=2pt, inner sep = 0.3cm, drop shadow, draw=black!50, fill=white] {
+          \IfNoValueTF{#1}
+                      {\includegraphics[width=.42\textwidth]{#2}}
+                      {\includegraphics[width=#1]{#2}}
+        };
+      \end{tikzpicture}
+      \begin{tikzpicture}
+        \node [rectangle, rounded corners=2pt, inner sep = 0.3cm, drop shadow, draw=black!50, fill=white] {
+          \IfNoValueTF{#1}
+                      {\includegraphics[width=.42\textwidth]{#3}}
+                      {\includegraphics[width=#1]{#3}}
+        };
+      \end{tikzpicture}
+    \end{center}
+    \caption{#4}
+    \label{#5}
   \end{figure}
 }
 
@@ -164,13 +187,13 @@
 \tikzstyle{convexHull}=[fill=blue!30]
 \tikzstyle{convexHullBord}=[color=black, dash pattern=on 3pt off 3pt]
 \tikzstyle{controlPoly}=[color=black, line width=0.25mm]
-\tikzstyle{controlPolyTract}=[color=black, line width=0.25mm, dash
-pattern=on 3pt off 3pt]
-\tikzstyle{obstacleTract}=[draw=black, line width=0.25mm, dash
-pattern=on 3pt off 3pt]
+\tikzstyle{controlPolyTract}=[color=black, line width=0.25mm, dash pattern=on 3pt off 3pt]
+\tikzstyle{controlPolyTractHigh}=[color=red, line width=0.25mm, dash pattern=on 3pt off 3pt]
+\tikzstyle{obstacleTract}=[draw=black, line width=0.25mm, dash pattern=on 3pt off 3pt]
 \tikzstyle{spline}=[color=red, line width=0.5mm]
 \tikzstyle{controlVert}=[color=green, draw=black]
 \tikzstyle{controlVertHigh}=[color=red, draw=black]
+\tikzstyle{obstaclePoint}=[color=red, draw=black]
 \tikzstyle{site}=[color=blue, draw=black]
 \tikzstyle{siteHigh}=[color=red, draw=black]
 \tikzstyle{textArrow}=[draw=red, line width=0.5mm, ->]
@@ -291,3 +314,8 @@ shadow, minimum width=\transH, minimum height=\transW]
 \newcommand{\mR}{\ensuremath{\mathbb{R}}}
 \newcommand{\mN}{\ensuremath{\mathbb{N}}}
 
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "dissertation"
+%%% End:

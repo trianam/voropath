@@ -138,7 +138,7 @@ class Voronizator:
         if postSimplify:
             shortestPath = self._simplifyPath(shortestPath, verbose, debug)
 
-        print(self._bsplineDegree)
+        #print(self._bsplineDegree)
         if self._bsplineDegree == 3:
             shortestPath = self._addNAlignedVertexes(1, shortestPath, verbose, debug)        
         if self._bsplineDegree == 4:
