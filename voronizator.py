@@ -104,7 +104,7 @@ class Voronizator:
 
     def calculateShortestPath(self, start, end, attachMode='near', prune=True, useMethod='cleanPath', postSimplify=True, verbose=False, debug=False):
         """
-        useMethod: cleanPath; trijkstra; annealing
+        useMethod: cleanPath; trijkstra; annealing; none
         """
         if verbose:
             print('Attach start and end points', flush=True)
@@ -135,7 +135,7 @@ class Voronizator:
             self._shortestPath.simplify(verbose, debug)
 
         #print(self._bsplineDegree)
-        if useMethod != 'annealing':
+        if useMethod != 'annealing' and useMethod != 'none':
             if self._bsplineDegree == 3:
                 self._shortestPath.addNAlignedVertexes(1, verbose, debug)        
             if self._bsplineDegree == 4:
