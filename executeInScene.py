@@ -14,7 +14,7 @@ if len(sys.argv) >= 2:
         i += 1
         bsplineDegree = int(sys.argv[i])
         i += 1
-        useTrijkstra = bool(eval(sys.argv[i]))
+        useMethod = str(sys.argv[i])
         i += 1
         postSimplify = bool(eval(sys.argv[i]))
         i += 1
@@ -23,7 +23,7 @@ if len(sys.argv) >= 2:
         startPoint = np.array(tuple(eval(input('Insert start point (x,y,z): '))),dtype=float)
         endPoint = np.array(tuple(eval(input('Insert end point (x,y,z): '))),dtype=float)
         bsplineDegree = int(input('Insert B-spline degree (2 or 4): '))
-        useTrijkstra = bool(eval(input('Do you want to use Trijkstra method? (True/False): ')))
+        useMethod = str(input('Wich method you want to use? (cleanPath/trijkstra/annealing): '))
         postSimplify = bool(eval(input('Do you want to simplify path? (True/False): ')))
         adaptivePartition = bool(eval(input('Do you want adaptive partition? (True/False): ')))
 
@@ -33,8 +33,9 @@ if len(sys.argv) >= 2:
 
     voronoi = record['voronoi']
     voronoi.setBsplineDegree(bsplineDegree)
+    voronoi.setAdaptivePartition(adaptivePartition)
 
-    voronoi.calculateShortestPath(startPoint, endPoint, 'near', useTrijkstra=useTrijkstra, postSimplify=postSimplify, verbose=True, debug=False)
+    voronoi.calculateShortestPath(startPoint, endPoint, 'near', useMethod=useMethod, postSimplify=postSimplify, verbose=True, debug=False)
 
     print('Build renderer, window and interactor', flush=True)
     plt = plotter.Plotter()
@@ -42,10 +43,10 @@ if len(sys.argv) >= 2:
     #voronoi.plotSites(plt, verbose = True)
     voronoi.plotPolyhedrons(plt, verbose = True)
     #voronoi.plotGraph(plt, verbose = True)
-    voronoi.plotShortestPath(plt, adaptivePartition = adaptivePartition, verbose = True)
+    voronoi.plotShortestPath(plt, verbose = True)
 
     print('Render', flush=True)
     plt.draw()
 
 else:
-    print('use: {} sceneFile [startPoint endPoint degree(2,4) useTrijkstra postSimplify adaptivePartition]'.format(sys.argv[0]))
+    print('use: {} sceneFile [startPoint endPoint degree(2,4) useMethod postSimplify adaptivePartition]'.format(sys.argv[0]))

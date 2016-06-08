@@ -278,37 +278,10 @@ class Plotter:
 
         self._rendererScene.AddActor(actor)
 
-    def addBSpline(self, controlPolygon, degree, adaptivePartition, color, thick=False, thickness=_DEFAULT_BSPLINE_THICKNESS):
+    def addBSpline(self, path, degree, color, thick=False, thickness=_DEFAULT_BSPLINE_THICKNESS):
         self._addedBSpline = True
-        
-        x = controlPolygon[:,0]
-        y = controlPolygon[:,1]
-        z = controlPolygon[:,2]
 
-        polLen = 0.
-        for i in range(1, len(controlPolygon)):
-            polLen += sp.spatial.distance.euclidean(controlPolygon[i-1], controlPolygon[i])
-
-        t = self._createExtendedPartition(controlPolygon, degree, adaptivePartition)
-        #print("controlPolygonA: {}".format(controlPolygon))
-        #print("T: {}".format(t))
-
-
-        #[knots, coeff, degree]
-        tck = [t,[x,y,z], degree]
-
-        u=np.linspace(0,1,(max(polLen*10,100)),endpoint=True)
-        out = sp.interpolate.splev(u, tck)
-        outD1 = sp.interpolate.splev(u, tck, 1)
-        outD2 = sp.interpolate.splev(u, tck, 2)
-
-        spline = np.stack(out).T
-        splineD1 = np.stack(outD1).T
-        splineD2 = np.stack(outD2).T
-
-        if degree >= 3:
-            outD3 = sp.interpolate.splev(u, tck, 3)
-            splineD3 = np.stack(outD3).T
+        u,spline,splineD1,splineD2,splineD3,curv,tors = path.splinePoints()
 
         curvPlotActor = vtk.vtkXYPlotActor()
         curvPlotActor.SetTitle("Curvature")
@@ -337,20 +310,6 @@ class Plotter:
         #maxCurv = maxTors = float("-inf")
         
         for i in range(len(u)):
-            d1Xd2 = np.cross(splineD1[i], splineD2[i])
-            Nd1Xd2 = np.linalg.norm(d1Xd2)
-            Nd1 = np.linalg.norm(splineD1[i])
-
-            currCurv = 0.
-            if Nd1 >= 1.:
-                currCurv = Nd1Xd2 / math.pow(Nd1,3)
-
-            currTors = 0.
-            if degree >= 3 and Nd1Xd2 >= 1.:
-                try:
-                    currTors = np.dot(d1Xd2, splineD3[i]) / math.pow(Nd1Xd2, 2)
-                except RuntimeWarning:
-                    currTors = 0.
 
             # if Nd1Xd2 < minNd1Xd2:
             #     minNd1Xd2 = Nd1Xd2
@@ -365,9 +324,9 @@ class Plotter:
 
             #currTors = np.linalg.det(np.stack([splineD1[i], splineD2[i], splineD3[i]]).T) / math.pow(np.linalg.norm(np.cross(splineD1[i], splineD2[i])), 2)
             uArray.InsertNextValue(u[i])
-            curvArray.InsertNextValue(currCurv)
-            torsArray.InsertNextValue(currTors)
-            curvTorsArray.InsertNextValue(currCurv + abs(currTors))
+            curvArray.InsertNextValue(curv[i])
+            torsArray.InsertNextValue(tors[i])
+            curvTorsArray.InsertNextValue(curv[i] + abs(tors[i]))
 
         #print("minCurv: {:e}; maxCurv: {:e}; minTors: {:e}; maxTors: {:e}; minNd1Xd2: {:e}".format(minCurv, maxCurv, minTors, maxTors, minNd1Xd2))
 
@@ -494,31 +453,4 @@ class Plotter:
 
         self._rendererScene.AddActor(actor)
 
-    def _createExtendedPartition(self, controlPolygon, degree, adaptivePartition):
-        nv = len(controlPolygon)
-        nn = nv - degree + 1
-
-        if not adaptivePartition:
-            T = np.linspace(0,1,nv-degree+1,endpoint=True)
-        else:
-            d = [0]
-            for j in range(1, nv):
-                d.append(d[j-1] + np.linalg.norm(controlPolygon[j] - controlPolygon[j-1]))
-            t = []
-            for i in range(nn-1):
-                a = i * (nv-1) / (nn-1)
-                ai = math.floor(a)
-                ad = a - ai
-                p = ad * controlPolygon[ai+1] + (1-ad) * controlPolygon[ai]
-                l = d[ai] + np.linalg.norm(p - controlPolygon[ai])
-                t.append(l / d[nv-1])
-
-            t.append(1.)
-
-            T = np.array(t)
-
-        T = np.append([0]*degree, T)
-        T = np.append(T, [1]*degree)
-
-        return T
     

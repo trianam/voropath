@@ -5,27 +5,32 @@ import scipy.spatial
 import networkx as nx
 import numpy.linalg
 import polyhedron
+import polyhedronsContainer
+import path
 import uuid
 import xml.etree.cElementTree as ET
 
 class Voronizator:
-    def __init__(self, sites=np.array([]), bsplineDegree=4):
+    def __init__(self, sites=np.array([]), bsplineDegree=4, adaptivePartition=False):
+        self._shortestPath = path.Path(bsplineDegree, adaptivePartition)
         self._sites = sites
-        self._shortestPath = np.array([])
         self._graph = nx.Graph()
         self._tGraph = nx.DiGraph()
         self._startTriplet = None
         self._endTriplet = None
-        self._polyhedrons = []
+        self._polyhedronsContainer = polyhedronsContainer.PolyhedronsContainer()
         self._pathStart = np.array([])
         self._pathEnd = np.array([])
         self._startId = uuid.uuid4()
         self._endId = uuid.uuid4()
         self._bsplineDegree = bsplineDegree
-        self._hasBoundingBox = False
 
     def setBsplineDegree(self, bsplineDegree):
         self._bsplineDegree = bsplineDegree
+        self._shortestPath.setBsplineDegree(bsplineDegree)
+
+    def setAdaptivePartition(self, adaptivePartition):
+        self._shortestPath.setAdaptivePartition(adaptivePartition)
 
     def setCustomSites(self, sites):
         self._sites = sites
@@ -36,35 +41,20 @@ class Voronizator:
         self._sites = sp.rand(number,3)
 
     def addPolyhedron(self, polyhedron):
-        self._polyhedrons.append(polyhedron)
+        self._polyhedronsContainer.addPolyhedron(polyhedron)
 
     def addBoundingBox(self, a, b, maxEmptyArea=1, invisible=True, verbose=False):
         if verbose:
             print('Add bounding box', flush=True)
 
-        self._hasBoundingBox = True
-        self._boundingBoxA = a
-        self._boundingBoxB = b
-
-        c = [a[0], b[1], a[2]]
-        d = [b[0], a[1], a[2]]
-        e = [a[0], a[1], b[2]]
-        f = [b[0], b[1], a[2]]
-        g = [b[0], a[1], b[2]]
-        h = [a[0], b[1], b[2]]
-
-        self._polyhedrons.append(polyhedron.Polyhedron(faces=np.array([
-            [a,g,e],[a,d,g],[d,f,g],[f,b,g],[f,b,h],[f,h,c],
-            [h,a,e],[h,c,a],[e,h,g],[h,b,g],[a,d,f],[a,f,c]
-            ]), invisible=invisible, maxEmptyArea=maxEmptyArea))
-
+        self._polyhedronsContainer.addBoundingBox(a,b,maxEmptyArea, invisible)
 
     def setPolyhedronsSites(self, verbose=False):
         if verbose:
             print('Set sites for Voronoi', flush=True)
 
         sites = []
-        for polyhedron in self._polyhedrons:
+        for polyhedron in self._polyhedronsContainer.polyhedrons:
             sites.extend(polyhedron.allPoints)
 
         self._sites = np.array(sites)
@@ -90,7 +80,7 @@ class Voronizator:
                     if (ridge[i] != -1) and (ridge[j] != -1):
                         a = vorVer[ridge[i]]
                         b = vorVer[ridge[j]]
-                        if (not prune) or (not self._segmentIntersectPolyhedrons(a,b)):
+                        if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(a,b)):
                             if tuple(a) in ids.keys():
                                 idA = ids[tuple(a)]
                             else:
@@ -112,7 +102,10 @@ class Voronizator:
 
         self._createTripleGraph(verbose, debug)
 
-    def calculateShortestPath(self, start, end, attachMode='near', prune=True, useTrijkstra=False, postSimplify=True, verbose=False, debug=False):
+    def calculateShortestPath(self, start, end, attachMode='near', prune=True, useMethod='cleanPath', postSimplify=True, verbose=False, debug=False):
+        """
+        useMethod: cleanPath; trijkstra; annealing
+        """
         if verbose:
             print('Attach start and end points', flush=True)
         if attachMode=='near':
@@ -127,24 +120,27 @@ class Voronizator:
         self._pathStart = start
         self._pathEnd = end
 
-        if useTrijkstra:
+        if useMethod == 'trijkstra':
             self._removeCollidingTriples(verbose, debug)
 
         triPath = self._dijkstra(verbose, debug)
-        shortestPath = self._extractPath(triPath, verbose, debug)
+        path = self._extractPath(triPath, verbose)
+        self._shortestPath.assignValues(path, self._polyhedronsContainer)
 
-        if not useTrijkstra:
-            shortestPath = self._cleanPath(shortestPath, verbose, debug)
+        if useMethod == 'cleanPath':
+            self._shortestPath.clean(verbose, debug)
+        elif useMethod == 'annealing':
+            self._shortestPath.anneal(verbose)
         if postSimplify:
-            shortestPath = self._simplifyPath(shortestPath, verbose, debug)
+            self._shortestPath.simplify(verbose, debug)
 
         #print(self._bsplineDegree)
-        if self._bsplineDegree == 3:
-            shortestPath = self._addNAlignedVertexes(1, shortestPath, verbose, debug)        
-        if self._bsplineDegree == 4:
-            shortestPath = self._addNAlignedVertexes(2, shortestPath, verbose, debug)
+        if useMethod != 'annealing':
+            if self._bsplineDegree == 3:
+                self._shortestPath.addNAlignedVertexes(1, verbose, debug)        
+            if self._bsplineDegree == 4:
+                self._shortestPath.addNAlignedVertexes(2, verbose, debug)
             
-        self._shortestPath = shortestPath
             
 
     def plotSites(self, plotter, verbose=False):
@@ -158,7 +154,7 @@ class Voronizator:
         if verbose:
             print('Plot Polyhedrons', end='', flush=True)
             
-        for poly in self._polyhedrons:
+        for poly in self._polyhedronsContainer.polyhedrons:
             poly.plot(plotter)
             if verbose:
                 print('.', end='', flush=True)
@@ -166,24 +162,24 @@ class Voronizator:
         if verbose:
             print('', flush=True)
 
-    def plotShortestPath(self, plotter, adaptivePartition=False, verbose=False):
+    def plotShortestPath(self, plotter, verbose=False):
         if verbose:
             print('Plot shortest path', flush=True)
             
-        if self._shortestPath.size > 0:
-            if self._hasBoundingBox:
-                splineThickness = np.linalg.norm(np.array(self._boundingBoxB) - np.array(self._boundingBoxA)) / 1000.
+        if self._shortestPath.vertexes.size > 0:
+            if self._polyhedronsContainer.hasBoundingBox:
+                splineThickness = np.linalg.norm(np.array(self._polyhedronsContainer.boundingBoxB) - np.array(self._polyhedronsContainer.boundingBoxA)) / 1000.
                 pointThickness = splineThickness * 2.
                 lineThickness = splineThickness / 2.
                 
-                plotter.addPolyLine(self._shortestPath, plotter.COLOR_CONTROL_POLIG, thick=True, thickness=lineThickness)
-                plotter.addPoints(self._shortestPath, plotter.COLOR_CONTROL_POINTS, thick=True, thickness=pointThickness)
-                plotter.addBSpline(self._shortestPath, self._bsplineDegree, adaptivePartition, plotter.COLOR_PATH, thick=True, thickness=splineThickness)
+                plotter.addPolyLine(self._shortestPath.vertexes, plotter.COLOR_CONTROL_POLIG, thick=True, thickness=lineThickness)
+                plotter.addPoints(self._shortestPath.vertexes, plotter.COLOR_CONTROL_POINTS, thick=True, thickness=pointThickness)
+                plotter.addBSpline(self._shortestPath, self._bsplineDegree, plotter.COLOR_PATH, thick=True, thickness=splineThickness)
 
             else:
-                plotter.addPolyLine(self._shortestPath, plotter.COLOR_CONTROL_POLIG, thick=True)
-                plotter.addPoints(self._shortestPath, plotter.COLOR_CONTROL_POINTS, thick=True)
-                plotter.addBSpline(self._shortestPath, self._bsplineDegree, adaptivePartition, plotter.COLOR_PATH, thick=True)
+                plotter.addPolyLine(self._shortestPath.vertexes, plotter.COLOR_CONTROL_POLIG, thick=True)
+                plotter.addPoints(self._shortestPath.vertexes, plotter.COLOR_CONTROL_POINTS, thick=True)
+                plotter.addBSpline(self._shortestPath, self._bsplineDegree, plotter.COLOR_PATH, thick=True)
 
     def plotGraph(self, plotter, verbose=False):
         if verbose:
@@ -192,13 +188,13 @@ class Voronizator:
         plotter.addGraph(self._graph, plotter.COLOR_GRAPH)
 
     def extractXmlTree(self, root):
-        if self._hasBoundingBox:
+        if self._polyhedronsContainer.hasBoundingBox:
             xmlBoundingBox = ET.SubElement(root, 'boundingBox')
-            ET.SubElement(xmlBoundingBox, 'a', x=str(self._boundingBoxA[0]), y=str(self._boundingBoxA[1]), z=str(self._boundingBoxA[2]))
-            ET.SubElement(xmlBoundingBox, 'b', x=str(self._boundingBoxB[0]), y=str(self._boundingBoxB[1]), z=str(self._boundingBoxB[2]))
+            ET.SubElement(xmlBoundingBox, 'a', x=str(self._polyhedronsContainer.boundingBoxA[0]), y=str(self._polyhedronsContainer.boundingBoxA[1]), z=str(self._polyhedronsContainer.boundingBoxA[2]))
+            ET.SubElement(xmlBoundingBox, 'b', x=str(self._polyhedronsContainer.boundingBoxB[0]), y=str(self._polyhedronsContainer.boundingBoxB[1]), z=str(self._polyhedronsContainer.boundingBoxB[2]))
 
         xmlPolyhedrons = ET.SubElement(root, 'polyhedrons')
-        for polyhedron in self._polyhedrons:
+        for polyhedron in self._polyhedronsContainer.polyhedrons:
             xmlPolyhedron = polyhedron.extractXmlTree(xmlPolyhedrons)
 
     def importXmlTree(self, root, maxEmptyArea):
@@ -207,9 +203,9 @@ class Voronizator:
             xmlA = xmlBoundingBox.find('a')
             xmlB = xmlBoundingBox.find('b')
             
-            self._hasBoundingBox = True
-            self._boundingBoxA = [float(xmlA.attrib['x']), float(xmlA.attrib['y']), float(xmlA.attrib['z'])]
-            self._boundingBoxB = [float(xmlB.attrib['x']), float(xmlB.attrib['y']), float(xmlB.attrib['z'])]
+            self._polyhedronsContainer.hasBoundingBox = True
+            self._polyhedronsContainer.boundingBoxA = [float(xmlA.attrib['x']), float(xmlA.attrib['y']), float(xmlA.attrib['z'])]
+            self._polyhedronsContainer.boundingBoxB = [float(xmlB.attrib['x']), float(xmlB.attrib['y']), float(xmlB.attrib['z'])]
 
         xmlPolyhedrons = root.find('polyhedrons')
         if xmlPolyhedrons:
@@ -227,33 +223,7 @@ class Voronizator:
                     faces.append(vertexes)
 
                 newPolyhedron = polyhedron.Polyhedron(faces=np.array(faces), invisible=invisible, maxEmptyArea=maxEmptyArea)
-                self.addPolyhedron(newPolyhedron)
-
-    def _segmentIntersectPolyhedrons(self, a, b):
-        intersect = False
-        if self._hasBoundingBox:
-            if((a<self._boundingBoxA).any() or (a>self._boundingBoxB).any() or (b<self._boundingBoxA).any() or (b>self._boundingBoxB).any()):
-                intersect = True
-
-        if not intersect:
-            for polyhedron in self._polyhedrons:
-                if polyhedron.intersectSegment(a,b)[0]:
-                    intersect = True
-                    break
-                    
-        return intersect
-
-    def _triangleIntersectPolyhedrons(self, a, b, c):
-        triangle = polyhedron.Polyhedron(faces=np.array([[a,b,c]]), distributePoints = False)
-        intersect = False
-        result = np.array([])
-        for currPolyhedron in self._polyhedrons:
-            currIntersect,currResult = currPolyhedron.intersectPathTriple(triangle)
-            if currIntersect and (not intersect or (currResult[1] > result[1])):
-                intersect = True
-                result = currResult
-
-        return (intersect, result)
+                self_polyhedrons.addPolyhedron(newPolyhedron)
 
     def _attachToGraphNear(self, start, end, prune):
         firstS = True
@@ -263,7 +233,7 @@ class Voronizator:
         minDistS = 0.
         minDistE = 0.
         for node,nodeAttr in self._graph.node.items():
-            if (not prune) or (not self._segmentIntersectPolyhedrons(start,nodeAttr['coord'])):
+            if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(start,nodeAttr['coord'])):
                 if firstS:
                     minAttachS = node
                     minDistS = np.linalg.norm(start - nodeAttr['coord'])
@@ -274,7 +244,7 @@ class Voronizator:
                         minAttachS = node
                         minDistS = currDist
 
-            if (not prune) or (not self._segmentIntersectPolyhedrons(end, nodeAttr['coord'])):
+            if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(end, nodeAttr['coord'])):
                 if firstE:
                     minAttachE = node
                     minDistE = np.linalg.norm(end - nodeAttr['coord'])
@@ -292,9 +262,9 @@ class Voronizator:
 
     def _attachToGraphAll(self, start, end, prune):
         for node,nodeAttr in self._graph.node.items():
-            if (not prune) or (not self._segmentIntersectPolyhedrons(start, nodeAttr['coord'])):
+            if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(start, nodeAttr['coord'])):
                 self._addNodeToTGraph(self._startId, start, node, np.linalg.norm(start - nodeAttr['coord']), rightDirection=True)
-            if (not prune) or (not self._segmentIntersectPolyhedrons(end, nodeAttr['coord'])):
+            if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(end, nodeAttr['coord'])):
                 self._addNodeToTGraph(self._endId, end, node, np.linalg.norm(end - nodeAttr['coord']), rightDirection=False)
 
     def _addNodeToTGraph(self, newId, coord, attachId, dist, rightDirection):
@@ -405,6 +375,16 @@ class Voronizator:
 
         return triPath
 
+    def _extractPath(self, triPath, verbose):
+        if verbose:
+            print('Extract path', flush=True)
+
+        path = []
+        for t in triPath:
+            path.append(self._graph.node[self._tGraph.node[t]['triplet'][1]]['coord'])
+        return np.array(path)
+
+
     def _removeCollidingTriples(self, verbose, debug):
         if verbose:
             print('Remove colliding triples', flush=True)
@@ -420,7 +400,7 @@ class Voronizator:
             a = self._graph.node[self._tGraph.node[triple]['triplet'][0]]['coord']
             b = self._graph.node[self._tGraph.node[triple]['triplet'][1]]['coord']
             c = self._graph.node[self._tGraph.node[triple]['triplet'][2]]['coord']
-            intersect,intersectRes = self._triangleIntersectPolyhedrons(a, b, c)
+            intersect,intersectRes = self._polyhedronsContainer.triangleIntersectPolyhedrons(a, b, c)
             if intersect:
                 toRemove.append(triple)
                 
@@ -429,119 +409,4 @@ class Voronizator:
 
         for triple in toRemove:
             self._tGraph.remove_node(triple)
-    
-    def _extractPath(self, triPath, verbose, debug):
-        if verbose:
-            print('Extract path', flush=True)
-
-        path = []
-        for t in triPath:
-            path.append(self._graph.node[self._tGraph.node[t]['triplet'][1]]['coord'])
-        return np.array(path)
-
-    def _cleanPath(self, path, verbose, debug):
-        if verbose:
-            print('Clean path (avoid obstacles)', flush=True)
-
-        newPath = []
-        if len(path) > 0:
-            a = path[0]
-            newPath.append(path[0])
-
-        for i in range(1, len(path)-1):
-            v = path[i]
-            b = path[i+1]
-
-            intersect,intersectRes = self._triangleIntersectPolyhedrons(a, v, b)
-            if intersect:
-                alpha = intersectRes[1]
-
-                a1 = (1.-alpha)*a + alpha*v
-                b1 = alpha*v + (1.-alpha)*b
-
-                newPath.append(a1)
-                newPath.append(v)
-                newPath.append(b1)
-
-                a = b1
-            else:
-                newPath.append(v)
-
-                a = v
-
-        if len(path) > 0:
-            newPath.append(path[len(path)-1])
-
-        return np.array(newPath)
-
-
-    def _simplifyPath(self, path, verbose, debug):
-        if verbose:
-            print('Simplify path (remove useless triples)', flush=True)
-
-        simplifiedPath = []
-        if len(path) > 0:
-            a = path[0]
-            simplifiedPath.append(path[0])
-        first = True
-        for i in range(1,len(path)-1):
-            v = path[i]
-            b = path[i+1]
-            keepV = False
-
-            intersectCurr,nihil = self._triangleIntersectPolyhedrons(a, v, b)
-
-            if not intersectCurr:
-                if first:
-                    intersectPrec = False
-                else:
-                    a1 = path[i-2]
-                    intersectPrec,nihil = self._triangleIntersectPolyhedrons(a1, a, b)
-
-                if i == len(path)-2:
-                    intersectSucc = False
-                else:
-                    b1 = path[i+2]
-                    intersectSucc,nihil = self._triangleIntersectPolyhedrons(a, b, b1)
-
-                if intersectPrec or intersectSucc:
-                    keepV = True
-
-            else:
-                keepV = True
-
-            if keepV:
-                first = False
-                simplifiedPath.append(v)
-                a = v
-
-        if len(path) > 0:
-            simplifiedPath.append(path[len(path)-1])
-
-        return np.array(simplifiedPath)
-            
-    def _addNAlignedVertexes(self, numVertexes, path, verbose, debug):
-        if verbose:
-            print('Increase degree', flush=True)
-
-        newPath = []
-        for i in range(1, len(path)):
-            a = path[i-1]
-            b = path[i]
-            newPath.append(a)
-
-            if numVertexes == 1:
-                n = 0.5 * a + 0.5 * b
-                newPath.append(n)
-                
-            elif numVertexes == 2:
-                n1 = 0.33 * a + 0.67 * b
-                n2 = 0.33 * b + 0.67 * a
-                newPath.append(n1)
-                newPath.append(n2)
-                
-        if len(path) > 0:
-            newPath.append(path[len(path)-1])
-
-        return np.array(newPath)
     

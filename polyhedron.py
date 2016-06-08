@@ -1,4 +1,6 @@
 import numpy as np
+import scipy as sp
+import scipy.spatial
 import math
 import xml.etree.cElementTree as ET
 
@@ -60,6 +62,25 @@ class Polyhedron:
 
         self.allPoints = np.array(allPoints)
 
+    def hasPointInside(self, p):
+        """
+        check if a point is inside the convex hull of obstacle vertexes
+        """
+        vertexes = [p]
+        for triangle in self._faces:
+            vertexes.append(triangle[0])
+            vertexes.append(triangle[1])
+            vertexes.append(triangle[2])
+
+        chull = sp.spatial.ConvexHull(np.array(vertexes))
+        outside = False
+        for simplex in chull.simplices:
+            if (p == chull.points[simplex[0]]).all() or (p == chull.points[simplex[1]]).all() or (p == chull.points[simplex[2]]).all():
+                outside = True
+                break
+
+        return not outside
+        
     def intersectSegment(self, a, b):
         for triangle in self._faces:
             #solve {

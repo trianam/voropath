@@ -123,7 +123,7 @@ voronoi._boundingBoxB = np.array([1.1, 1.1, 1.1])
 
 
 voronoi._createTripleGraph(True, False)
-voronoi.calculateShortestPath(np.array([0.,0.,0.]), np.array([1.,1.,1.]), attachMode='near', prune=True, useTrijkstra=False, postSimplify=False, verbose=True, debug=False)
+voronoi.calculateShortestPath(np.array([0.,0.,0.]), np.array([1.,1.,1.]), attachMode='near', prune=True, useMethod='cleanPath', postSimplify=False, verbose=True, debug=False)
 
 #voronoi._shortestPath = voronoi._dijkstraPlus(voronoi._pathStart, voronoi._pathEnd)
 #voronoi._shortestPath = voronoi._extractPath(voronoi._trijkstra(True, False), False, True, False)
