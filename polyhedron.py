@@ -5,7 +5,7 @@ import math
 import xml.etree.cElementTree as ET
 
 class Polyhedron:
-    def __init__(self, faces, invisible=False, distributePoints=True, maxEmptyArea=0.1):
+    def __init__(self, faces, invisible=False, distributePoints=True, maxEmptyArea=0.1, boundingBox=False):
         """
         can be composed only by combined triangles
         faces -> an np.array of triangular faces
@@ -13,11 +13,15 @@ class Polyhedron:
         """
         self._faces = faces
         self._invisible = invisible
+        self._boundingBox = boundingBox
             
         if distributePoints:
             self.distributePoints(maxEmptyArea)
         else:
             self.allPoints = np.array([])
+
+    def isBoundingBox(self):
+        return self._boundingBox
         
     def _area(self, triangle):
         a = np.linalg.norm(triangle[1]-triangle[0])

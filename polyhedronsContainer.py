@@ -42,7 +42,7 @@ class PolyhedronsContainer:
         self.addPolyhedron(polyhedron.Polyhedron(faces=np.array([
             [a,g,e],[a,d,g],[d,f,g],[f,b,g],[f,b,h],[f,h,c],
             [h,a,e],[h,c,a],[e,h,g],[h,b,g],[a,d,f],[a,f,c]
-            ]), invisible=invisible, maxEmptyArea=maxEmptyArea))
+            ]), invisible=invisible, maxEmptyArea=maxEmptyArea, boundingBox=True))
 
     def pointInsidePolyhedron(self, p):
         inside = False
@@ -52,10 +52,10 @@ class PolyhedronsContainer:
 
         if not inside:
             for polyhedron in self._polyhedrons:
-                if polyhedron.hasPointInside(p):
+                if (not polyhedron.isBoundingBox()) and polyhedron.hasPointInside(p):
                     inside = True
                     break
-                    
+
         return inside
         
 

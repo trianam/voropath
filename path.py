@@ -11,11 +11,9 @@ class Path:
     _minTemperature=0.00001#0.00000001
     _minDeltaEnergy=0.000001
     _maxVlambdaPert = 100.
-    _maxVertexPert = 0.01
+    #_maxVertexPert = 1#0.01
     _initialVlambda = 0.
     _changeVlambdaProbability = 0.05
-    _numPointsSplineMultiplier = 10
-    _numSigmaGauss = 9
 
     def __init__(self, bsplineDegree, adaptivePartition):
         self._bsplineDegree = bsplineDegree
@@ -36,6 +34,9 @@ class Path:
         self._dimR = self._vertexes.shape[0]
         self._dimC = self._vertexes.shape[1]
         self._polyhedronsContainer = polyhedronsContainer
+        length = self._calculatePolyLength(self._vertexes)
+        self._maxVertexPert = length / 10.
+
 
     def setBsplineDegree(self, bsplineDegree):
         self._bsplineDegree = bsplineDegree
@@ -90,14 +91,21 @@ class Path:
         temperature = self._initialTemperature
         while True:
             initialEnergy = self._currentEnergy
+            numMovedLambda = 0
+            numMovedVertex = 0
             for i in range(self._trials):
-                self._tryMove(temperature)
+                movedLambda,movedVertex = self._tryMove(temperature)
+                if movedLambda:
+                    numMovedLambda += 1
+                if movedVertex:
+                    numMovedVertex += 1
             deltaEnergy = abs(initialEnergy - self._currentEnergy)
             temperature = temperature * self._warmingRatio
             if verbose:
-                print("T:{}; DE:{}".format(temperature, deltaEnergy))
+                print("T:{}; E:{}; DE:{}; L:{}; C:{}; ML:{}; MV:{}".format(temperature, self._currentEnergy, deltaEnergy, self._vlambda, self._currentConstraints, numMovedLambda, numMovedVertex), flush=True)
+                #print(self._vertexes)
 
-            if (temperature < self._minTemperature) or (deltaEnergy < self._minDeltaEnergy):
+            if (temperature < self._minTemperature) or (numMovedVertex > 0 and (deltaEnergy < self._minDeltaEnergy) and self._currentConstraints == 0.):
                 break
 
 
@@ -285,6 +293,8 @@ class Path:
         previous-next nodes axis.
         """
 
+        movedLambda = False
+        movedVertex = False
         moveVlambda = random.random() < self._changeVlambdaProbability
         if moveVlambda:
             newVlambda = self._vlambda
@@ -296,6 +306,7 @@ class Path:
             if (newEnergy > self._currentEnergy) or (math.exp(-(self._currentEnergy-newEnergy)/temperature) >= random.random()):
                 self._vlambda = newVlambda
                 self._currentEnergy = newEnergy
+                movedLambda = True
         
         else:
             newVertexes = np.copy(self._vertexes)
@@ -312,6 +323,9 @@ class Path:
                 self._currentEnergy = newEnergy
                 self._currentMaxCurvatureLength = newMaxCurvatureLength
                 self._currentConstraints = newConstraints
+                movedVertex = True
+
+        return (movedLambda, movedVertex)
 
     def _calculatePathEnergyLambda(self, vlambda):
         """
