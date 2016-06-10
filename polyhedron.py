@@ -107,9 +107,11 @@ class Polyhedron:
 
         return not outside
         
-    def intersectSegment(self, a, b):
-        minS = np.array([min(a[0],b[0]),min(a[1],b[1]),min(a[2],b[2])])
-        maxS = np.array([max(a[0],b[0]),max(a[1],b[1]),max(a[2],b[2])])
+    def intersectSegment(self, a, b, minS=None, maxS=None):
+        if minS is None or maxS is None:
+            minS = np.array([min(a[0],b[0]),min(a[1],b[1]),min(a[2],b[2])])
+            maxS = np.array([max(a[0],b[0]),max(a[1],b[1]),max(a[2],b[2])])
+            
         if not ((self._minV > maxS).any() or (self._maxV < minS).any()):
             for triangle in self._faces:
                 #solve {

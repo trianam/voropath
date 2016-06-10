@@ -66,8 +66,11 @@ class PolyhedronsContainer:
                 intersect = True
 
         if not intersect:
+            minS = np.array([min(a[0],b[0]),min(a[1],b[1]),min(a[2],b[2])])
+            maxS = np.array([max(a[0],b[0]),max(a[1],b[1]),max(a[2],b[2])])
+
             for polyhedron in self._polyhedrons:
-                if polyhedron.intersectSegment(a,b)[0]:
+                if polyhedron.intersectSegment(a,b,minS,maxS)[0]:
                     intersect = True
                     break
                     
