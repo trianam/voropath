@@ -8,7 +8,7 @@ class Path:
     _initialTemperature = 10#1000
     _trials = 10#100
     _warmingRatio = 0.7#0.9
-    _minTemperature=0.00001#0.00000001
+    _minTemperature=0.0000001#0.00000001
     _minDeltaEnergy=0.000001
     _maxVlambdaPert = 100.
     #_maxVertexPert = 1#0.01
