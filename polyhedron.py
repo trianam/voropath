@@ -142,11 +142,11 @@ class Polyhedron:
                 try:
                     x = np.linalg.solve(A,B)
                     # check if
-                    #          0 <= k <= 1,
-                    #          w >= 0
-                    #          s >= 0
-                    #          w+s <= 1
-                    if (x[0] >= 0.) and (x[0] <= 1.) and (x[1] >= 0.) and (x[2] >= 0.) and (x[1]+x[2] <= 1.):
+                    #          0 < k < 1,
+                    #          w > 0
+                    #          s > 0
+                    #          w+s < 1
+                    if (x[0] > 0.) and (x[0] < 1.) and (x[1] > 0.) and (x[2] > 0.) and (x[1]+x[2] < 1.):
                         return (True, x)
                 except np.linalg.linalg.LinAlgError:
                     pass
