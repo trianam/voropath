@@ -100,10 +100,14 @@ class Polyhedron:
 
             chull = sp.spatial.ConvexHull(np.array(vertexes))
             outside = False
-            for simplex in chull.simplices:
-                if (p == chull.points[simplex[0]]).all() or (p == chull.points[simplex[1]]).all() or (p == chull.points[simplex[2]]).all():
+            for vertex in chull.vertices:
+                if (p == chull.points[vertex]).all():
                     outside = True
                     break
+            # for simplex in chull.simplices:
+            #     if (p == chull.points[simplex[0]]).all() or (p == chull.points[simplex[1]]).all() or (p == chull.points[simplex[2]]).all():
+            #         outside = True
+            #         break
 
         return not outside
         
