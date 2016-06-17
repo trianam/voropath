@@ -22,9 +22,9 @@ if len(sys.argv) >= 2:
     else:
         startPoint = np.array(tuple(eval(input('Insert start point (x,y,z): '))),dtype=float)
         endPoint = np.array(tuple(eval(input('Insert end point (x,y,z): '))),dtype=float)
-        bsplineDegree = int(input('Insert B-spline degree (2 or 4): '))
+        bsplineDegree = int(input('Insert B-spline degree (2/3/4): '))
         useMethod = str(input('Wich method you want to use? (cleanPath/trijkstra/annealing/none): '))
-        postSimplify = bool(eval(input('Do you want to simplify path? (True/False): ')))
+        postSimplify = bool(eval(input('Do you want post processing? (True/False): ')))
         adaptivePartition = bool(eval(input('Do you want adaptive partition? (True/False): ')))
 
     print('Load file', flush=True)
@@ -49,4 +49,4 @@ if len(sys.argv) >= 2:
     plt.draw()
 
 else:
-    print('use: {} sceneFile [startPoint endPoint degree(2,4) useMethod postSimplify adaptivePartition]'.format(sys.argv[0]))
+    print('use: {} sceneFile [startPoint endPoint degree(2,4) useMethod postProcessing adaptivePartition]'.format(sys.argv[0]))
