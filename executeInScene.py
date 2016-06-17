@@ -23,7 +23,7 @@ if len(sys.argv) >= 2:
         startPoint = np.array(tuple(eval(input('Insert start point (x,y,z): '))),dtype=float)
         endPoint = np.array(tuple(eval(input('Insert end point (x,y,z): '))),dtype=float)
         bsplineDegree = int(input('Insert B-spline degree (2 or 4): '))
-        useMethod = str(input('Wich method you want to use? (cleanPath/trijkstra/annealing): '))
+        useMethod = str(input('Wich method you want to use? (cleanPath/trijkstra/annealing/none): '))
         postSimplify = bool(eval(input('Do you want to simplify path? (True/False): ')))
         adaptivePartition = bool(eval(input('Do you want adaptive partition? (True/False): ')))
 
