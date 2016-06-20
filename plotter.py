@@ -296,7 +296,8 @@ class Plotter:
     def addBSpline(self, path, degree, color, thick=False, thickness=_DEFAULT_BSPLINE_THICKNESS):
         self._addedBSpline = True
 
-        u,spline,splineD1,splineD2,splineD3,curv,tors,length = path.splinePoints()
+        tau, u,spline,splineD1,splineD2,splineD3,curv,tors,length = path.splinePoints()
+        numIntervals = len(tau)-1
 
         curvPlotActor = vtk.vtkXYPlotActor()
         curvPlotActor.SetTitle("Curvature")
@@ -310,59 +311,57 @@ class Plotter:
         torsPlotActor.SetYTitle("")
         torsPlotActor.SetXValuesToIndex()
 
-        uArray = vtk.vtkDoubleArray()
-        uArray.SetName("t")
+        uArrays = []
+        curvArrays = []
+        torsArrays = []
+        for i in range(numIntervals):
+            uArrays.append(vtk.vtkDoubleArray())
+            uArrays[i].SetName("t")
+            
+            curvArrays.append(vtk.vtkDoubleArray())
+            curvArrays[i].SetName("Curvature")
+
+            torsArrays.append(vtk.vtkDoubleArray())
+            torsArrays[i].SetName("Torsion")
         
-        curvArray = vtk.vtkDoubleArray()
-        curvArray.SetName("Curvature")
-
-        torsArray = vtk.vtkDoubleArray()
-        torsArray.SetName("Torsion")
-
         curvTorsArray = vtk.vtkDoubleArray()
 
         #minCurv = minTors = minNd1Xd2 = float("inf")
         #maxCurv = maxTors = float("-inf")
         
         for i in range(len(u)):
-
-            # if Nd1Xd2 < minNd1Xd2:
-            #     minNd1Xd2 = Nd1Xd2
-            # if currCurv < minCurv:
-            #     minCurv = currCurv
-            # if currCurv > maxCurv:
-            #     maxCurv = currCurv
-            # if currTors < minTors:
-            #     minTors = currTors
-            # if currTors > maxTors:
-            #     maxTors = currTors
-
-            #currTors = np.linalg.det(np.stack([splineD1[i], splineD2[i], splineD3[i]]).T) / math.pow(np.linalg.norm(np.cross(splineD1[i], splineD2[i])), 2)
-            uArray.InsertNextValue(u[i])
-            curvArray.InsertNextValue(curv[i])
-            torsArray.InsertNextValue(tors[i])
-            curvTorsArray.InsertNextValue(curv[i] + abs(tors[i]))
+            for j in range(numIntervals):
+                if u[i] >= tau[j] and u[i] < tau[j+1]:
+                    break
+            
+            uArrays[j].InsertNextValue(u[i])
+            curvArrays[j].InsertNextValue(curv[i])
+            torsArrays[j].InsertNextValue(tors[i])
+            
+            curvTorsArray.InsertNextValue(curv[i])# + abs(tors[i]))
 
         #print("minCurv: {:e}; maxCurv: {:e}; minTors: {:e}; maxTors: {:e}; minNd1Xd2: {:e}".format(minCurv, maxCurv, minTors, maxTors, minNd1Xd2))
 
-        plotTable = vtk.vtkTable()
-        plotTable.AddColumn(uArray)
-        plotTable.AddColumn(curvArray)
-        plotTable.AddColumn(torsArray)
+        for inter in range(numIntervals):
+            plotTable = vtk.vtkTable()
+            plotTable.AddColumn(uArrays[inter])
+            plotTable.AddColumn(curvArrays[inter])
+            plotTable.AddColumn(torsArrays[inter])
         
-        points = self._chartXYCurv.AddPlot(vtk.vtkChart.POINTS)
-        points.SetInputData(plotTable, 0, 1)
-        points.SetColor(0, 0, 255, 255)
-        points.SetWidth(1.0)
-        points.SetMarkerStyle(vtk.vtkPlotPoints.CIRCLE)
-        points.SetMarkerSize(2)
+            points = self._chartXYCurv.AddPlot(vtk.vtkChart.LINE)
+            points.SetInputData(plotTable, 0, 1)
+            points.SetColor(0, 0, 255, 255)
+            points.SetWidth(1.0)
+            if inter > 0:
+                points.SetLegendVisibility(False)
             
-        points = self._chartXYTors.AddPlot(vtk.vtkChart.POINTS)
-        points.SetInputData(plotTable, 0, 2)
-        points.SetColor(255, 0, 0, 255)
-        points.SetWidth(1.0)
-        points.SetMarkerStyle(vtk.vtkPlotPoints.CIRCLE)
-        points.SetMarkerSize(2)
+            points = self._chartXYTors.AddPlot(vtk.vtkChart.LINE)
+            points.SetInputData(plotTable, 0, 2)
+            points.SetColor(255, 0, 0, 255)
+            points.SetWidth(1.0)
+            if inter > 0:
+                points.SetLegendVisibility(False)
+
             
         vtkPoints = vtk.vtkPoints()
         for point in spline:
