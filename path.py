@@ -14,7 +14,7 @@ class Path:
     #_maxVertexPert = 1#0.01
     _initialVlambda = 0.
     _changeVlambdaProbability = 0.05
-    _useArcLen = False
+    _useArcLen = True
     _ratioCurvTorsLen = [0.1, 0.1, 0.8]
 
     def __init__(self, bsplineDegree, adaptivePartition):
@@ -36,8 +36,8 @@ class Path:
         self._dimR = self._vertexes.shape[0]
         self._dimC = self._vertexes.shape[1]
         self._polyhedronsContainer = polyhedronsContainer
-        tau, u, spline, splineD1, splineD2, splineD3, curv, tors, length = self._splinePoints(self._vertexes)
-        self._maxVertexPert = length / 10.
+        tau, u, spline, splineD1, splineD2, splineD3, curv, tors, arcLength, polLength = self._splinePoints(self._vertexes)
+        self._maxVertexPert = polLength / 10.
 
 
     def setBsplineDegree(self, bsplineDegree):
@@ -86,7 +86,7 @@ class Path:
         if verbose:
             print('Anneal path', flush=True)
 
-        tau, u, self._spline, splineD1, splineD2, splineD3, curv, tors, length = self._splinePoints(self._vertexes)
+        tau, u, self._spline, splineD1, splineD2, splineD3, curv, tors, arcLength, polLength = self._splinePoints(self._vertexes)
         self._currentEnergy, self._maxCurvatureLength, self._currentConstraints = self._initializePathEnergy(self._vertexes, self._spline, splineD1, splineD2, self._vlambda)
 
 
@@ -215,7 +215,7 @@ class Path:
 
         curv = []
         tors = []
-        length = 0.
+        arcLength = 0.
         for i in range(len(u)):
             d1Xd2 = np.cross(splineD1[i], splineD2[i])
             Nd1Xd2 = np.linalg.norm(d1Xd2)
@@ -235,18 +235,14 @@ class Path:
             curv.append(currCurv)
             tors.append(currTors)
 
-            if self._useArcLen:
-                if i >= 1:
-                    dMin = min(prevNd1, Nd1)
-                    dMax = max(prevNd1, Nd1)
-                    length += (u[i]-u[i-1]) * (dMin + ((dMax-dMin) / 2.))
+            if i >= 1:
+                dMin = min(prevNd1, Nd1)
+                dMax = max(prevNd1, Nd1)
+                arcLength += (u[i]-u[i-1]) * (dMin + ((dMax-dMin) / 2.))
                 
-                prevNd1 = Nd1
+            prevNd1 = Nd1
                 
-        if not self._useArcLen:
-            length = polLen
-
-        return (tau, u, spline, splineD1, splineD2, splineD3, curv, tors, length)
+        return (tau, u, spline, splineD1, splineD2, splineD3, curv, tors, arcLength, polLen)
 
     def _createKnotPartition(self, controlPolygon):
         nv = len(controlPolygon)
@@ -277,7 +273,12 @@ class Path:
         return (T,Text)
 
     def _initializePathEnergy(self, vertexes, spline, splineD1, splineD2, vlambda):
-        tau, u, spline, splineD1, splineD2, splineD3, curv, tors, length = self._splinePoints(vertexes)
+        tau, u, spline, splineD1, splineD2, splineD3, curv, tors, arcLength, polLength = self._splinePoints(vertexes)
+        if self._useArcLen:
+            length = arcLength
+        else:
+            length = polLength
+            
         self._initialLength = length
         maxCurvatureLength = self._calculateMaxCurvatureLength(length, curv, tors)
         constraints = self._calculateConstraints(spline)
@@ -347,7 +348,12 @@ class Path:
         """
         calculate the energy when a vertex is moved and returns it.
         """
-        tau, u, spline, splineD1, splineD2, splineD3, curv, tors, length = self._splinePoints(vertexes)
+        tau, u, spline, splineD1, splineD2, splineD3, curv, tors, arcLength, polLength = self._splinePoints(vertexes)
+        if self._useArcLen:
+            length = arcLength
+        else:
+            length = polLength
+            
         constraints = self._calculateConstraints(spline)#this is bottleneck
         maxCurvatureLength = self._calculateMaxCurvatureLength(length, curv, tors)
 

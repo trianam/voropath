@@ -139,6 +139,9 @@ class Plotter:
         self._chartXYTors.GetAxis(vtk.vtkAxis.LEFT).SetTitle("")
         self._chartXYTors.GetAxis(vtk.vtkAxis.BOTTOM).SetTitle("")
 
+        self._textActor = vtk.vtkTextActor()
+        self._textActor.GetTextProperty().SetColor( 1.0, 0.0, 0.0 )
+
         self._addedBSpline = False
         
     def draw(self):
@@ -150,9 +153,22 @@ class Plotter:
         widget.SetOutlineColor(0.9300, 0.5700, 0.1300)
         widget.SetOrientationMarker(axes)
         widget.SetInteractor(self._renderWindowInteractor)
-        widget.SetViewport(0.0, 0.0, 0.1, 0.1)
+        #widget.SetViewport(0.0, 0.0, 0.1, 0.1)
+        widget.SetViewport(0.0, 0.0, 0.2, 0.4)
         widget.SetEnabled(True)
         widget.InteractiveOn()
+
+        textWidget = vtk.vtkTextWidget()
+ 
+        textRepresentation = vtk.vtkTextRepresentation()
+        textRepresentation.GetPositionCoordinate().SetValue(.0,.0 )
+        textRepresentation.GetPosition2Coordinate().SetValue(.5,.1 )
+        textWidget.SetRepresentation(textRepresentation)
+ 
+        textWidget.SetInteractor(self._renderWindowInteractor)
+        textWidget.SetTextActor(self._textActor)
+        textWidget.SelectableOff()
+        textWidget.On()
 
         self._rendererScene.ResetCamera()
         camPos = self._rendererScene.GetActiveCamera().GetPosition()
@@ -300,7 +316,10 @@ class Plotter:
     def addBSpline(self, path, degree, color, thick=False, thickness=_DEFAULT_BSPLINE_THICKNESS):
         self._addedBSpline = True
 
-        tau, u,spline,splineD1,splineD2,splineD3,curv,tors,length = path.splinePoints()
+        tau, u, spline, splineD1, splineD2, splineD3, curv, tors, arcLength, polLength = path.splinePoints()
+
+        self._textActor.SetInput("Length: "+str(arcLength))
+
         numIntervals = len(tau)-1
 
         curvPlotActor = vtk.vtkXYPlotActor()
