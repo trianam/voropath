@@ -14,6 +14,8 @@ class Path:
     #_maxVertexPert = 1#0.01
     _initialVlambda = 0.
     _changeVlambdaProbability = 0.05
+    _useArcLen = False
+    _ratioCurvTorsLen = [0.1, 0.1, 0.8]
 
     def __init__(self, bsplineDegree, adaptivePartition):
         self._bsplineDegree = bsplineDegree
@@ -188,9 +190,7 @@ class Path:
         y = vertexes[:,1]
         z = vertexes[:,2]
 
-        polLen = 0.
-        for i in range(1, len(vertexes)):
-            polLen += sp.spatial.distance.euclidean(vertexes[i-1], vertexes[i])
+        polLen = self._calculatePolyLength(vertexes)
 
         t = self._createExtendedPartition(vertexes)
 
@@ -235,13 +235,16 @@ class Path:
             curv.append(currCurv)
             tors.append(currTors)
 
-            if i >= 1:
-                dMin = min(prevNd1, Nd1)
-                dMax = max(prevNd1, Nd1)
-                length += (u[i]-u[i-1]) * (dMin + ((dMax-dMin) / 2.))
+            if self._useArcLen:
+                if i >= 1:
+                    dMin = min(prevNd1, Nd1)
+                    dMax = max(prevNd1, Nd1)
+                    length += (u[i]-u[i-1]) * (dMin + ((dMax-dMin) / 2.))
                 
-            prevNd1 = Nd1
-
+                prevNd1 = Nd1
+                
+        if not self._useArcLen:
+            length = polLen
 
         return (u, spline, splineD1, splineD2, splineD3, curv, tors, length)
 
@@ -352,6 +355,13 @@ class Path:
             
         return (energy, maxCurvatureLength, constraints)
 
+    def _calculatePolyLength(self, vertexes):
+        length = 0.
+        for i in range(1, self._dimR):
+            length += sp.spatial.distance.euclidean(vertexes[i-1], vertexes[i])
+            #length += np.linalg.norm(np.subtract(vertexes[i], vertexes[i-1]))
+        return length
+
     def _calculateMaxCurvatureLength(self, length, curv, tors):
         normLength = length/self._initialLength * 100 #for making the ratio indipendent of the initial length
 
@@ -365,8 +375,7 @@ class Path:
             if currTors > maxTorsion:
                 maxTorsion = currTors
 
-        ratioCurvTorsLen = [0.1, 0.1, 0.8]
-        return ratioCurvTorsLen[0]*maxCurvature + ratioCurvTorsLen[1]*maxTorsion + ratioCurvTorsLen[2]*normLength
+        return self._ratioCurvTorsLen[0]*maxCurvature + self._ratioCurvTorsLen[1]*maxTorsion + self._ratioCurvTorsLen[2]*normLength
 
     def _calculateConstraints(self, spline):
         """
