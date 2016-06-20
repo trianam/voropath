@@ -352,17 +352,6 @@ class Path:
             
         return (energy, maxCurvatureLength, constraints)
 
-    def _calculatePolyLength(self, u, splineD1):
-        length = 0.
-        for i in range(1, len(u)):
-            d1 = np.linalg.norm(splineD1[i-1])
-            d2 = np.linalg.norm(splineD1[i])
-            dMin = min(d1, d2)
-            dMax = max(d1, d2)
-            length += (u[i]-u[i-1]) * (dMin + ((dMax-dMin) / 2.))
-            
-        return length
-
     def _calculateMaxCurvatureLength(self, length, curv, tors):
         normLength = length/self._initialLength * 100 #for making the ratio indipendent of the initial length
 
