@@ -281,7 +281,7 @@ class Plotter:
     def addBSpline(self, path, degree, color, thick=False, thickness=_DEFAULT_BSPLINE_THICKNESS):
         self._addedBSpline = True
 
-        u,spline,splineD1,splineD2,splineD3,curv,tors = path.splinePoints()
+        u,spline,splineD1,splineD2,splineD3,curv,tors,length = path.splinePoints()
 
         curvPlotActor = vtk.vtkXYPlotActor()
         curvPlotActor.SetTitle("Curvature")

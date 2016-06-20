@@ -34,7 +34,7 @@ class Path:
         self._dimR = self._vertexes.shape[0]
         self._dimC = self._vertexes.shape[1]
         self._polyhedronsContainer = polyhedronsContainer
-        length = self._calculatePolyLength(self._vertexes)
+        u, spline, splineD1, splineD2, splineD3, curv, tors, length = self._splinePoints(self._vertexes)
         self._maxVertexPert = length / 10.
 
 
@@ -84,7 +84,7 @@ class Path:
         if verbose:
             print('Anneal path', flush=True)
 
-        u, self._spline, splineD1, splineD2, splineD3, curv, tors = self._splinePoints(self._vertexes)
+        u, self._spline, splineD1, splineD2, splineD3, curv, tors, length = self._splinePoints(self._vertexes)
         self._currentEnergy, self._maxCurvatureLength, self._currentConstraints = self._initializePathEnergy(self._vertexes, self._spline, splineD1, splineD2, self._vlambda)
 
 
@@ -215,6 +215,7 @@ class Path:
 
         curv = []
         tors = []
+        length = 0.
         for i in range(len(u)):
             d1Xd2 = np.cross(splineD1[i], splineD2[i])
             Nd1Xd2 = np.linalg.norm(d1Xd2)
@@ -234,8 +235,15 @@ class Path:
             curv.append(currCurv)
             tors.append(currTors)
 
+            if i >= 1:
+                dMin = min(prevNd1, Nd1)
+                dMax = max(prevNd1, Nd1)
+                length += (u[i]-u[i-1]) * (dMin + ((dMax-dMin) / 2.))
+                
+            prevNd1 = Nd1
 
-        return (u, spline, splineD1, splineD2, splineD3, curv, tors)
+
+        return (u, spline, splineD1, splineD2, splineD3, curv, tors, length)
 
     def _createExtendedPartition(self, controlPolygon):
         nv = len(controlPolygon)
@@ -266,9 +274,8 @@ class Path:
         return T    
 
     def _initializePathEnergy(self, vertexes, spline, splineD1, splineD2, vlambda):
-        length = self._calculatePolyLength(vertexes)
+        u, spline, splineD1, splineD2, splineD3, curv, tors, length = self._splinePoints(vertexes)
         self._initialLength = length
-        u, spline, splineD1, splineD2, splineD3, curv, tors = self._splinePoints(vertexes)
         maxCurvatureLength = self._calculateMaxCurvatureLength(length, curv, tors)
         constraints = self._calculateConstraints(spline)
         energy = maxCurvatureLength + vlambda * constraints
@@ -337,8 +344,7 @@ class Path:
         """
         calculate the energy when a vertex is moved and returns it.
         """
-        length = self._calculatePolyLength(vertexes)
-        u, spline, splineD1, splineD2, splineD3, curv, tors = self._splinePoints(vertexes)
+        u, spline, splineD1, splineD2, splineD3, curv, tors, length = self._splinePoints(vertexes)
         constraints = self._calculateConstraints(spline)#this is bottleneck
         maxCurvatureLength = self._calculateMaxCurvatureLength(length, curv, tors)
 
@@ -346,10 +352,15 @@ class Path:
             
         return (energy, maxCurvatureLength, constraints)
 
-    def _calculatePolyLength(self, vertexes):
+    def _calculatePolyLength(self, u, splineD1):
         length = 0.
-        for i in range(1, self._dimR):
-            length = length + np.linalg.norm(np.subtract(vertexes[i], vertexes[i-1]))
+        for i in range(1, len(u)):
+            d1 = np.linalg.norm(splineD1[i-1])
+            d2 = np.linalg.norm(splineD1[i])
+            dMin = min(d1, d2)
+            dMax = max(d1, d2)
+            length += (u[i]-u[i-1]) * (dMin + ((dMax-dMin) / 2.))
+            
         return length
 
     def _calculateMaxCurvatureLength(self, length, curv, tors):
