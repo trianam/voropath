@@ -115,15 +115,25 @@ class Plotter:
         self._interactorStyle.SetCamera(self._rendererScene.GetActiveCamera())
         self._interactorStyle.SetRenderWindow(self._renderWindowScene)
 
-        self._contextViewPlot = vtk.vtkContextView()
-        self._contextViewPlot.GetRenderer().SetBackground(self.COLOR_BG_PLOT)
+        self._contextViewPlotCurv = vtk.vtkContextView()
+        self._contextViewPlotCurv.GetRenderer().SetBackground(self.COLOR_BG_PLOT)
 
-        self._contextInteractorStyle = self.KeyPressContextInteractorStyle()
-        self._contextInteractorStyle.SetRenderWindow(self._contextViewPlot.GetRenderWindow())
+        self._contextInteractorStyleCurv = self.KeyPressContextInteractorStyle()
+        self._contextInteractorStyleCurv.SetRenderWindow(self._contextViewPlotCurv.GetRenderWindow())
         
-        self._chartXY = vtk.vtkChartXY()
-        self._contextViewPlot.GetScene().AddItem(self._chartXY)
-        self._chartXY.SetShowLegend(True)
+        self._chartXYCurv = vtk.vtkChartXY()
+        self._contextViewPlotCurv.GetScene().AddItem(self._chartXYCurv)
+        self._chartXYCurv.SetShowLegend(True)
+
+        self._contextViewPlotTors = vtk.vtkContextView()
+        self._contextViewPlotTors.GetRenderer().SetBackground(self.COLOR_BG_PLOT)
+
+        self._contextInteractorStyleTors = self.KeyPressContextInteractorStyle()
+        self._contextInteractorStyleTors.SetRenderWindow(self._contextViewPlotTors.GetRenderWindow())
+        
+        self._chartXYTors = vtk.vtkChartXY()
+        self._contextViewPlotTors.GetScene().AddItem(self._chartXYTors)
+        self._chartXYTors.SetShowLegend(True)
 
         self._addedBSpline = False
         
@@ -149,10 +159,15 @@ class Plotter:
         self._renderWindowScene.Render()
 
         if self._addedBSpline:
-            self._contextViewPlot.GetRenderWindow().SetMultiSamples(0)
-            self._contextViewPlot.GetInteractor().Initialize()
-            self._contextViewPlot.GetInteractor().SetInteractorStyle(self._contextInteractorStyle)
-            self._contextViewPlot.GetInteractor().Start()
+            self._contextViewPlotCurv.GetRenderWindow().SetMultiSamples(0)
+            self._contextViewPlotCurv.GetInteractor().Initialize()
+            self._contextViewPlotCurv.GetInteractor().SetInteractorStyle(self._contextInteractorStyleCurv)
+            #self._contextViewPlotCurv.GetInteractor().Start()
+
+            self._contextViewPlotTors.GetRenderWindow().SetMultiSamples(0)
+            self._contextViewPlotTors.GetInteractor().Initialize()
+            self._contextViewPlotTors.GetInteractor().SetInteractorStyle(self._contextInteractorStyleTors)
+            self._contextViewPlotTors.GetInteractor().Start()
         else:
             self._renderWindowInteractor.Start()
             
@@ -335,14 +350,14 @@ class Plotter:
         plotTable.AddColumn(curvArray)
         plotTable.AddColumn(torsArray)
         
-        points = self._chartXY.AddPlot(vtk.vtkChart.POINTS)
+        points = self._chartXYCurv.AddPlot(vtk.vtkChart.POINTS)
         points.SetInputData(plotTable, 0, 1)
         points.SetColor(0, 0, 255, 255)
         points.SetWidth(1.0)
         points.SetMarkerStyle(vtk.vtkPlotPoints.CIRCLE)
         points.SetMarkerSize(2)
             
-        points = self._chartXY.AddPlot(vtk.vtkChart.POINTS)
+        points = self._chartXYTors.AddPlot(vtk.vtkChart.POINTS)
         points.SetInputData(plotTable, 0, 2)
         points.SetColor(255, 0, 0, 255)
         points.SetWidth(1.0)
