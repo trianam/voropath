@@ -124,6 +124,8 @@ class Plotter:
         self._chartXYCurv = vtk.vtkChartXY()
         self._contextViewPlotCurv.GetScene().AddItem(self._chartXYCurv)
         self._chartXYCurv.SetShowLegend(True)
+        self._chartXYCurv.GetAxis(vtk.vtkAxis.LEFT).SetTitle("")
+        self._chartXYCurv.GetAxis(vtk.vtkAxis.BOTTOM).SetTitle("")
 
         self._contextViewPlotTors = vtk.vtkContextView()
         self._contextViewPlotTors.GetRenderer().SetBackground(self.COLOR_BG_PLOT)
@@ -134,6 +136,8 @@ class Plotter:
         self._chartXYTors = vtk.vtkChartXY()
         self._contextViewPlotTors.GetScene().AddItem(self._chartXYTors)
         self._chartXYTors.SetShowLegend(True)
+        self._chartXYTors.GetAxis(vtk.vtkAxis.LEFT).SetTitle("")
+        self._chartXYTors.GetAxis(vtk.vtkAxis.BOTTOM).SetTitle("")
 
         self._addedBSpline = False
         
