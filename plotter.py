@@ -164,7 +164,7 @@ class Plotter:
  
         textRepresentation = vtk.vtkTextRepresentation()
         textRepresentation.GetPositionCoordinate().SetValue(.0,.0 )
-        textRepresentation.GetPosition2Coordinate().SetValue(.4,.05 )
+        textRepresentation.GetPosition2Coordinate().SetValue(.3,.04 )
         textWidget.SetRepresentation(textRepresentation)
  
         textWidget.SetInteractor(self._renderWindowInteractor)

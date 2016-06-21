@@ -21,7 +21,6 @@ class Path:
         self._bsplineDegree = bsplineDegree
         self._adaptivePartition = adaptivePartition
         self._vertexes = np.array([])
-        self._dimR = 0
         self._dimC = 0
         self._polyhedronsContainer = []
         self._vlambda = self._initialVlambda
@@ -33,8 +32,8 @@ class Path:
 
     def assignValues(self, path, polyhedronsContainer):
         self._vertexes = path
-        self._dimR = self._vertexes.shape[0]
         self._dimC = self._vertexes.shape[1]
+
         self._polyhedronsContainer = polyhedronsContainer
         tau, u, spline, splineD1, splineD2, splineD3, curv, tors, arcLength, polLength = self._splinePoints(self._vertexes)
         self._maxVertexPert = polLength / 10.
@@ -321,7 +320,7 @@ class Path:
         
         else:
             newVertexes = np.copy(self._vertexes)
-            movedV = random.randint(1,self._dimR - 2) #don't change extremes
+            movedV = random.randint(1,len(self._vertexes) - 2) #don't change extremes
 
             moveC = random.randint(0,self._dimC - 1)
             newVertexes[movedV][moveC] = newVertexes[movedV][moveC] + (random.uniform(-1.,1.) * self._maxVertexPert)
@@ -363,7 +362,7 @@ class Path:
 
     def _calculatePolyLength(self, vertexes):
         length = 0.
-        for i in range(1, self._dimR):
+        for i in range(1, len(vertexes)):
             length += sp.spatial.distance.euclidean(vertexes[i-1], vertexes[i])
             #length += np.linalg.norm(np.subtract(vertexes[i], vertexes[i-1]))
         return length
