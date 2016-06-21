@@ -11,7 +11,7 @@ class Path:
     _minTemperature=0.0000001#0.00000001
     _minDeltaEnergy=0.000001
     _maxVlambdaPert = 100.
-    #_maxVertexPert = 1#0.01
+    _maxVertexPertFactor = 10.
     _initialVlambda = 0.
     _changeVlambdaProbability = 0.05
     _useArcLen = True
@@ -36,7 +36,7 @@ class Path:
 
         self._polyhedronsContainer = polyhedronsContainer
         tau, u, spline, splineD1, splineD2, splineD3, curv, tors, arcLength, polLength = self._splinePoints(self._vertexes)
-        self._maxVertexPert = polLength / 10.
+        self._maxVertexPert = polLength / self._maxVertexPertFactor
 
 
     def setBsplineDegree(self, bsplineDegree):
