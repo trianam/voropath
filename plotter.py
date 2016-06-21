@@ -21,6 +21,8 @@ class Plotter:
     COLOR_GRAPH = vtk.util.colors.sepia
     COLOR_PLOT_CURV = vtk.util.colors.blue
     COLOR_PLOT_TORS = vtk.util.colors.red
+    COLOR_LABELS = vtk.util.colors.blue
+    COLOR_LENGTH = vtk.util.colors.red
 
     _DEFAULT_LINE_THICKNESS = 0.05
     _DEFAULT_POINT_THICKNESS = 0.2
@@ -140,7 +142,7 @@ class Plotter:
         self._chartXYTors.GetAxis(vtk.vtkAxis.BOTTOM).SetTitle("")
 
         self._textActor = vtk.vtkTextActor()
-        self._textActor.GetTextProperty().SetColor( 1.0, 0.0, 0.0 )
+        self._textActor.GetTextProperty().SetColor(self.COLOR_LENGTH)
 
         self._addedBSpline = False
         
@@ -162,7 +164,7 @@ class Plotter:
  
         textRepresentation = vtk.vtkTextRepresentation()
         textRepresentation.GetPositionCoordinate().SetValue(.0,.0 )
-        textRepresentation.GetPosition2Coordinate().SetValue(.5,.1 )
+        textRepresentation.GetPosition2Coordinate().SetValue(.4,.05 )
         textWidget.SetRepresentation(textRepresentation)
  
         textWidget.SetInteractor(self._renderWindowInteractor)
@@ -373,14 +375,14 @@ class Plotter:
         
             points = self._chartXYCurv.AddPlot(vtk.vtkChart.LINE)
             points.SetInputData(plotTable, 0, 1)
-            points.SetColor(0, 0, 255, 255)
+            points.SetColor(self.COLOR_PLOT_CURV[0], self.COLOR_PLOT_CURV[1], self.COLOR_PLOT_CURV[2])
             points.SetWidth(1.0)
             if inter > 0:
                 points.SetLegendVisibility(False)
             
             points = self._chartXYTors.AddPlot(vtk.vtkChart.LINE)
             points.SetInputData(plotTable, 0, 2)
-            points.SetColor(255, 0, 0, 255)
+            points.SetColor(self.COLOR_PLOT_TORS[0], self.COLOR_PLOT_TORS[1], self.COLOR_PLOT_TORS[2])
             points.SetWidth(1.0)
             if inter > 0:
                 points.SetLegendVisibility(False)
@@ -389,6 +391,55 @@ class Plotter:
         vtkPoints = vtk.vtkPoints()
         for point in spline:
             vtkPoints.InsertNextPoint(point[0], point[1], point[2])
+
+        polyDataLabelP = vtk.vtkPolyData()
+        polyDataLabelP.SetPoints(vtkPoints)
+        
+        labels = vtk.vtkStringArray()
+        labels.SetNumberOfValues(len(spline))
+        labels.SetName("labels")
+        for i in range(len(spline)):
+            if i == 0:
+                labels.SetValue(i, "S")
+            elif i == len(spline)-1:
+                labels.SetValue(i, "E")
+            else:
+                labels.SetValue(i, "")
+
+        polyDataLabelP.GetPointData().AddArray(labels)
+
+        sizes = vtk.vtkIntArray()
+        sizes.SetNumberOfValues(len(spline))
+        sizes.SetName("sizes")
+        for i in range(len(spline)):
+            if i == 0 or i == len(spline)-1:
+                sizes.SetValue(i, 10)
+            else:
+                sizes.SetValue(i,1)
+
+        polyDataLabelP.GetPointData().AddArray(sizes)
+        
+        pointMapper = vtk.vtkPolyDataMapper()
+        pointMapper.SetInputData(polyDataLabelP)
+ 
+        pointActor = vtk.vtkActor()
+        pointActor.SetMapper(pointMapper)
+
+        pointSetToLabelHierarchyFilter = vtk.vtkPointSetToLabelHierarchy()
+        pointSetToLabelHierarchyFilter.SetInputData(polyDataLabelP)
+        pointSetToLabelHierarchyFilter.SetLabelArrayName("labels")
+        pointSetToLabelHierarchyFilter.SetPriorityArrayName("sizes")
+        pointSetToLabelHierarchyFilter.GetTextProperty().SetColor(self.COLOR_LABELS)
+        pointSetToLabelHierarchyFilter.GetTextProperty().SetFontSize(15)
+        pointSetToLabelHierarchyFilter.GetTextProperty().SetBold(True)
+        pointSetToLabelHierarchyFilter.Update()
+        
+        labelMapper = vtk.vtkLabelPlacementMapper()
+        labelMapper.SetInputConnection(pointSetToLabelHierarchyFilter.GetOutputPort())
+        labelActor = vtk.vtkActor2D()
+        labelActor.SetMapper(labelMapper)
+
+        self._rendererScene.AddActor(labelActor)
 
         if thick:
             cellArray = vtk.vtkCellArray()
