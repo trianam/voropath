@@ -223,7 +223,7 @@ class Voronizator:
                     faces.append(vertexes)
 
                 newPolyhedron = polyhedron.Polyhedron(faces=np.array(faces), invisible=invisible, maxEmptyArea=maxEmptyArea)
-                self_polyhedrons.addPolyhedron(newPolyhedron)
+                self._polyhedronsContainer.addPolyhedron(newPolyhedron)
 
     def _attachToGraphNear(self, start, end, prune):
         firstS = True
