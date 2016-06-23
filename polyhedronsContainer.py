@@ -16,14 +16,26 @@ class PolyhedronsContainer:
     def hasBoundingBox(self):
         return self._hasBoundingBox
 
+    @hasBoundingBox.setter
+    def hasBoundingBox(self, value):
+        self._hasBoundingBox = value
+
     @property
     def boundingBoxA(self):
         return self._boundingBoxA
         
+    @boundingBoxA.setter
+    def boundingBoxA(self, value):
+        self._boundingBoxA = value
+
     @property
     def boundingBoxB(self):
         return self._boundingBoxB
         
+    @boundingBoxB.setter
+    def boundingBoxB(self, value):
+        self._boundingBoxB = value
+
     def addPolyhedron(self, polyhedron):
         self._polyhedrons.append(polyhedron)
 

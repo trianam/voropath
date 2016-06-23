@@ -221,7 +221,7 @@ class Voronizator:
                         vertexes.append([float(xmlVertex.attrib['x']), float(xmlVertex.attrib['y']), float(xmlVertex.attrib['z'])])
 
                     faces.append(vertexes)
-
+                    
                 newPolyhedron = polyhedron.Polyhedron(faces=np.array(faces), invisible=invisible, maxEmptyArea=maxEmptyArea)
                 self._polyhedronsContainer.addPolyhedron(newPolyhedron)
 

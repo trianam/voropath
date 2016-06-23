@@ -51,7 +51,7 @@ class Polyhedron:
         return math.sqrt(s * (s-a) * (s-b) *(s-c))
 
     _comb2 = lambda self,a,b: 0.5*a + 0.5*b
-    _comb3 = lambda self,a,b,c: 0.33*a + 0.33*b + 0.33*c
+    #_comb3 = lambda self,a,b,c: 0.33*a + 0.33*b + 0.33*c
 
     def distributePoints(self, maxEmptyArea):
         allPoints = []
@@ -75,14 +75,18 @@ class Polyhedron:
                 ab = self._comb2(a,b)
                 bc = self._comb2(b,c)
                 ca = self._comb2(c,a)
-                abc = self._comb3(a,b,c)
+                #abc = self._comb3(a,b,c)
 
-                triangles.append(np.array([a,ab,abc]))
-                triangles.append(np.array([ab,b,abc]))
-                triangles.append(np.array([b,bc,abc]))
-                triangles.append(np.array([bc,c,abc]))
-                triangles.append(np.array([c,ca,abc]))
-                triangles.append(np.array([ca,a,abc]))
+                triangles.append(np.array([a,ab,ca]))
+                triangles.append(np.array([ab,b,bc]))
+                triangles.append(np.array([bc,c,ca]))
+                triangles.append(np.array([ab,bc,ca]))
+                #triangles.append(np.array([a,ab,abc]))
+                #triangles.append(np.array([ab,b,abc]))
+                #triangles.append(np.array([b,bc,abc]))
+                #triangles.append(np.array([bc,c,abc]))
+                #triangles.append(np.array([c,ca,abc]))
+                #triangles.append(np.array([ca,a,abc]))
 
         self.allPoints = np.array(allPoints)
 
@@ -146,7 +150,7 @@ class Polyhedron:
                     #          w > 0
                     #          s > 0
                     #          w+s < 1
-                    if (x[0] > 0.) and (x[0] < 1.) and (x[1] > 0.) and (x[2] > 0.) and (x[1]+x[2] < 1.):
+                    if (x[0] >= -0.9) and (x[0] <= 1.1) and (x[1] >= 0.) and (x[2] >= 0.) and (x[1]+x[2] <= 1.):
                         return (True, x)
                 except np.linalg.linalg.LinAlgError:
                     pass
