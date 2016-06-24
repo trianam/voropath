@@ -71,7 +71,7 @@ class PolyhedronsContainer:
         return inside
         
 
-    def segmentIntersectPolyhedrons(self, a, b):
+    def segmentIntersectPolyhedrons(self, a, b, intersectionMargin = 0.):
         intersect = False
         if self._hasBoundingBox:
             if((a<self._boundingBoxA).any() or (a>self._boundingBoxB).any() or (b<self._boundingBoxA).any() or (b>self._boundingBoxB).any()):
@@ -82,7 +82,7 @@ class PolyhedronsContainer:
             maxS = np.array([max(a[0],b[0]),max(a[1],b[1]),max(a[2],b[2])])
 
             for polyhedron in self._polyhedrons:
-                if polyhedron.intersectSegment(a,b,minS,maxS)[0]:
+                if polyhedron.intersectSegment(a,b,minS,maxS, intersectionMargin=intersectionMargin)[0]:
                     intersect = True
                     break
                     

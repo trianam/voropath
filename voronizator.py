@@ -11,6 +11,8 @@ import uuid
 import xml.etree.cElementTree as ET
 
 class Voronizator:
+    _pruningMargin = 0.3
+    
     def __init__(self, sites=np.array([]), bsplineDegree=4, adaptivePartition=False):
         self._shortestPath = path.Path(bsplineDegree, adaptivePartition)
         self._sites = sites
@@ -80,7 +82,7 @@ class Voronizator:
                     if (ridge[i] != -1) and (ridge[j] != -1):
                         a = vorVer[ridge[i]]
                         b = vorVer[ridge[j]]
-                        if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(a,b)):
+                        if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(a,b, intersectionMargin= self._pruningMargin)):
                             if tuple(a) in ids.keys():
                                 idA = ids[tuple(a)]
                             else:
@@ -233,7 +235,7 @@ class Voronizator:
         minDistS = 0.
         minDistE = 0.
         for node,nodeAttr in self._graph.node.items():
-            if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(start,nodeAttr['coord'])):
+            if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(start,nodeAttr['coord'], intersectionMargin= self._pruningMargin)):
                 if firstS:
                     minAttachS = node
                     minDistS = np.linalg.norm(start - nodeAttr['coord'])
@@ -244,7 +246,7 @@ class Voronizator:
                         minAttachS = node
                         minDistS = currDist
 
-            if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(end, nodeAttr['coord'])):
+            if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(end, nodeAttr['coord'], intersectionMargin= self._pruningMargin)):
                 if firstE:
                     minAttachE = node
                     minDistE = np.linalg.norm(end - nodeAttr['coord'])
@@ -262,9 +264,9 @@ class Voronizator:
 
     def _attachToGraphAll(self, start, end, prune):
         for node,nodeAttr in self._graph.node.items():
-            if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(start, nodeAttr['coord'])):
+            if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(start, nodeAttr['coord'], intersectionMargin= self._pruningMargin)):
                 self._addNodeToTGraph(self._startId, start, node, np.linalg.norm(start - nodeAttr['coord']), rightDirection=True)
-            if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(end, nodeAttr['coord'])):
+            if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(end, nodeAttr['coord'], intersectionMargin= self._pruningMargin)):
                 self._addNodeToTGraph(self._endId, end, node, np.linalg.norm(end - nodeAttr['coord']), rightDirection=False)
 
     def _addNodeToTGraph(self, newId, coord, attachId, dist, rightDirection):

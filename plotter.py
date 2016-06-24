@@ -32,11 +32,15 @@ class Plotter:
         _screenshotFile = "/tmp/screenshot.png"
         _cameraFile = "/tmp/cameraData.dat"
         def __init__(self, parent=None):
-            self.AddObserver("KeyPressEvent",self._keyPressEvent)
+            self.AddObserver("KeyPressEvent", self._keyPressEvent)
+            self.AddObserver("RightButtonPressEvent", self._mousePressEvent)
             #super(KeyPressInteractorStyle, self).__init__()
 
         def SetCamera(self, camera):
             self._camera = camera
+
+        def SetRenderer(self, renderer):
+            self._renderer = renderer
 
         def SetRenderWindow(self, renderWindow):
             self._renderWindow = renderWindow
@@ -82,6 +86,14 @@ class Plotter:
 
             self.OnKeyPress()
 
+        def _mousePressEvent(self, obj, event):
+            clickPos = obj.GetInteractor().GetEventPosition()
+            picker =vtk.vtkPropPicker()
+            picker.Pick(clickPos[0], clickPos[1], 0, self._renderer)
+            pos = picker.GetPickPosition()
+            print(pos)
+
+
     class KeyPressContextInteractorStyle(vtk.vtkContextInteractorStyle):
         _screenshotFile = "/tmp/screenshot.png"
         def __init__(self, parent=None):
@@ -115,6 +127,7 @@ class Plotter:
         #self._interactorStyle = vtk.vtkInteractorStyleUnicam()
         self._interactorStyle = self.KeyPressInteractorStyle()
         self._interactorStyle.SetCamera(self._rendererScene.GetActiveCamera())
+        self._interactorStyle.SetRenderer(self._rendererScene)
         self._interactorStyle.SetRenderWindow(self._renderWindowScene)
 
         self._contextViewPlotCurv = vtk.vtkContextView()

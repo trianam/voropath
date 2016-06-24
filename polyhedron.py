@@ -5,8 +5,6 @@ import math
 import xml.etree.cElementTree as ET
 
 class Polyhedron:
-    _intersectionMargin = 0.3
-    
     def __init__(self, faces, invisible=False, distributePoints=True, maxEmptyArea=0.1, boundingBox=False):
         """
         can be composed only by combined triangles
@@ -117,7 +115,7 @@ class Polyhedron:
 
         return not outside
         
-    def intersectSegment(self, a, b, minS=None, maxS=None):
+    def intersectSegment(self, a, b, minS=None, maxS=None, intersectionMargin=0.):
         if minS is None or maxS is None:
             minS = np.array([min(a[0],b[0]),min(a[1],b[1]),min(a[2],b[2])])
             maxS = np.array([max(a[0],b[0]),max(a[1],b[1]),max(a[2],b[2])])
@@ -152,7 +150,7 @@ class Polyhedron:
                     #          w > 0
                     #          s > 0
                     #          w+s < 1
-                    if (x[0] >= 0. - self._intersectionMargin) and (x[0] <= 1. + self._intersectionMargin) and (x[1] >= 0. - self._intersectionMargin) and (x[2] >= 0. - self._intersectionMargin) and (x[1]+x[2] <= 1. + self._intersectionMargin):
+                    if (x[0] >= 0. - intersectionMargin) and (x[0] <= 1. + intersectionMargin) and (x[1] >= 0. - intersectionMargin) and (x[2] >= 0. - intersectionMargin) and (x[1]+x[2] <= 1. + intersectionMargin):
                         return (True, x)
                 except np.linalg.linalg.LinAlgError:
                     pass

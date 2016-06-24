@@ -8,7 +8,7 @@ import pickle
 import voronizator
 import tetrahedron
 
-if len(sys.argv) >= 13 and len(sys.argv) <= 14:
+if len(sys.argv) >= 14 and len(sys.argv) <= 15:
     i = 1
     minX = float(sys.argv[i])
     i += 1
@@ -21,6 +21,8 @@ if len(sys.argv) >= 13 and len(sys.argv) <= 14:
     maxY = float(sys.argv[i])
     i += 1
     maxZ = float(sys.argv[i])
+    i += 1
+    bbMargin = float(sys.argv[i])
     i += 1
     fixedRadius = bool(eval(sys.argv[i]))
     i += 1
@@ -47,6 +49,7 @@ else:
     maxX = float(input('Insert max scene X: '))
     maxY = float(input('Insert max scene Y: '))
     maxZ = float(input('Insert max scene Z: '))
+    bbMargin = float(input('Insert bounding box margin: '))
     fixedRadius = bool(eval(input('Do you want fixed obstacle radius? (True/False): ')))
     if fixedRadius:
         radius = float(input('Insert obstacle radius: '))
@@ -95,7 +98,7 @@ for ob in range(numObstacles):
 
     print(' done', flush=True)
 
-voronoi.addBoundingBox([minX, minY, minZ], [maxX, maxY, maxZ], maxEmptyArea, verbose=True)
+voronoi.addBoundingBox([minX-bbMargin, minY-bbMargin, minZ-bbMargin], [maxX+bbMargin, maxY+bbMargin, maxZ+bbMargin], maxEmptyArea, verbose=True)
 
 voronoi.setPolyhedronsSites(verbose=True)
 voronoi.makeVoroGraph(verbose=True)
