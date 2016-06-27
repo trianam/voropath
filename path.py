@@ -113,7 +113,14 @@ class Path:
     def simplify(self, verbose, debug):
         if verbose:
             print('Simplify path (remove useless triples)', flush=True)
-
+        if self._bsplineDegree == 2:
+            self._simplify2()
+        elif self._bsplineDegree == 3:
+            self._simplify3()
+        elif self._bsplineDegree == 4:
+            self._simplify4()
+            
+    def _simplify2(self):
         simplifiedPath = []
         if len(self._vertexes) > 0:
             a = self._vertexes[0]
@@ -130,7 +137,7 @@ class Path:
                 if first:
                     intersectPrec = False
                 else:
-                    a1 = self._vertexes[i-2]
+                    #a1 = self._vertexes[i-2]
                     intersectPrec,nihil = self._polyhedronsContainer.triangleIntersectPolyhedrons(a1, a, b)
 
                 if i == len(self._vertexes)-2:
@@ -148,13 +155,67 @@ class Path:
             if keepV:
                 first = False
                 simplifiedPath.append(v)
+                a1 = a
                 a = v
 
         if len(self._vertexes) > 0:
             simplifiedPath.append(self._vertexes[len(self._vertexes)-1])
 
         self._vertexes = np.array(simplifiedPath)
+
+    def _simplify3(self):
+        simp = list(self._vertexes)
+        toEval = 0
+        while toEval < len(simp)-2:
+            toEval += 1
+            if toEval >= 3:
+                if toEval < len(simp)-1:
+                    if self._polyhedronsContainer.convexHullIntersectsPolyhedrons([simp[toEval-3], simp[toEval-2], simp[toEval-1], simp[toEval+1]]):
+                        continue
+
+            if toEval >= 2:
+                if toEval < len(simp)-2:
+                    if self._polyhedronsContainer.convexHullIntersectsPolyhedrons([simp[toEval-2], simp[toEval-1], simp[toEval+1], simp[toEval+2]]):
+                        continue
+
+            if toEval < len(simp)-3:
+                if self._polyhedronsContainer.convexHullIntersectsPolyhedrons([simp[toEval-1], simp[toEval+1], simp[toEval+2], simp[toEval+3]]):
+                        continue
+
+            del simp[toEval]
+            toEval -= 1
             
+        self._vertexes = np.array(simp)
+
+    def _simplify4(self):
+        simp = list(self._vertexes)
+        toEval = 0
+        while toEval < len(simp)-2:
+            toEval += 1
+            if toEval >= 4:
+                if toEval < len(simp)-1:
+                    if self._polyhedronsContainer.convexHullIntersectsPolyhedrons([simp[toEval-4], simp[toEval-3], simp[toEval-2], simp[toEval-1], simp[toEval+1]]):
+                        continue
+
+            if toEval >= 3:
+                if toEval < len(simp)-2:
+                    if self._polyhedronsContainer.convexHullIntersectsPolyhedrons([simp[toEval-3], simp[toEval-2], simp[toEval-1], simp[toEval+1], simp[toEval+2]]):
+                        continue
+
+            if toEval >= 2:
+                if toEval < len(simp)-3:
+                    if self._polyhedronsContainer.convexHullIntersectsPolyhedrons([simp[toEval-2], simp[toEval-1], simp[toEval+1], simp[toEval+2], simp[toEval+3]]):
+                        continue
+
+            if toEval < len(simp)-4:
+                if self._polyhedronsContainer.convexHullIntersectsPolyhedrons([simp[toEval-1], simp[toEval+1], simp[toEval+2], simp[toEval+3], simp[toEval+4]]):
+                        continue
+
+            del(simp[toEval])
+            toEval -= 1
+
+        self._vertexes = np.array(simp)
+        
     def addNAlignedVertexes(self, numVertexes, verbose, debug):
         if verbose:
             print('Increase degree', flush=True)

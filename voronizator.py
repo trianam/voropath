@@ -133,8 +133,6 @@ class Voronizator:
             self._shortestPath.clean(verbose, debug)
         elif useMethod == 'annealing':
             self._shortestPath.anneal(verbose)
-        if postSimplify:
-            self._shortestPath.simplify(verbose, debug)
 
         #print(self._bsplineDegree)
         if useMethod != 'annealing' and useMethod != 'none':
@@ -143,6 +141,8 @@ class Voronizator:
             if self._bsplineDegree == 4:
                 self._shortestPath.addNAlignedVertexes(2, verbose, debug)
             
+        if postSimplify:
+            self._shortestPath.simplify(verbose, debug)
             
 
     def plotSites(self, plotter, verbose=False):

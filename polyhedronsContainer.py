@@ -1,4 +1,6 @@
 import numpy as np
+import scipy as sp
+import scipy.spatial
 import polyhedron
 
 class PolyhedronsContainer:
@@ -100,4 +102,10 @@ class PolyhedronsContainer:
 
         return (intersect, result)
 
+    def convexHullIntersectsPolyhedrons(self, vertexes):
+        convHull = sp.spatial.ConvexHull(vertexes, qhull_options="QJ Pp")
+        for simplex in convHull.simplices:
+            if self.triangleIntersectPolyhedrons(convHull.points[simplex[0]], convHull.points[simplex[1]], convHull.points[simplex[2]])[0]:
+                return True
 
+        return False
