@@ -108,41 +108,42 @@ class Voronizator:
         """
         useMethod: cleanPath; trijkstra; annealing; none
         """
-        if verbose:
-            print('Attach start and end points', flush=True)
-        if attachMode=='near':
-            self._attachToGraphNear(start, end, prune)
-        elif attachMode=='all':
-            self._attachToGraphAll(start, end, prune)
-        else:
-            self._attachToGraphNear(start, end, prune)
+        if useMethod == 'trijkstra' or useMethod == 'cleanPath' or useMethod == 'annealing' or useMethod == 'none':
+            if verbose:
+                print('Attach start and end points', flush=True)
+            if attachMode=='near':
+                self._attachToGraphNear(start, end, prune)
+            elif attachMode=='all':
+                self._attachToGraphAll(start, end, prune)
+            else:
+                self._attachToGraphNear(start, end, prune)
 
-        self._attachSpecialStartEndTriples(verbose)
+            self._attachSpecialStartEndTriples(verbose)
 
-        self._pathStart = start
-        self._pathEnd = end
+            self._pathStart = start
+            self._pathEnd = end
 
-        if useMethod == 'trijkstra':
-            self._removeCollidingTriples(verbose, debug)
+            if useMethod == 'trijkstra':
+                self._removeCollidingTriples(verbose, debug)
 
-        triPath = self._dijkstra(verbose, debug)
-        path = self._extractPath(triPath, verbose)
-        self._shortestPath.assignValues(path, self._polyhedronsContainer)
+            triPath = self._dijkstra(verbose, debug)
+            path = self._extractPath(triPath, verbose)
+            self._shortestPath.assignValues(path, self._polyhedronsContainer)
 
-        if useMethod == 'cleanPath':
-            self._shortestPath.clean(verbose, debug)
-        elif useMethod == 'annealing':
-            self._shortestPath.anneal(verbose)
+            if useMethod == 'cleanPath':
+                self._shortestPath.clean(verbose, debug)
+            elif useMethod == 'annealing':
+                self._shortestPath.anneal(verbose)
 
-        #print(self._bsplineDegree)
-        if useMethod != 'annealing' and useMethod != 'none':
-            if self._bsplineDegree == 3:
-                self._shortestPath.addNAlignedVertexes(1, verbose, debug)        
-            if self._bsplineDegree == 4:
-                self._shortestPath.addNAlignedVertexes(2, verbose, debug)
-            
-        if postSimplify:
-            self._shortestPath.simplify(verbose, debug)
+            #print(self._bsplineDegree)
+            if useMethod != 'annealing' and useMethod != 'none':
+                if self._bsplineDegree == 3:
+                    self._shortestPath.addNAlignedVertexes(1, verbose, debug)        
+                if self._bsplineDegree == 4:
+                    self._shortestPath.addNAlignedVertexes(2, verbose, debug)
+
+            if postSimplify:
+                self._shortestPath.simplify(verbose, debug)
             
 
     def plotSites(self, plotter, verbose=False):

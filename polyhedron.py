@@ -30,8 +30,12 @@ class Polyhedron:
         if distributePoints:
             self.distributePoints(maxEmptyArea)
         else:
-            self.allPoints = np.array([])
+            self._allPoints = np.array([])
 
+    @property
+    def allPoints(self):
+        return self._allPoints
+            
     @property
     def minV(self):
         return self._minV
@@ -88,7 +92,7 @@ class Polyhedron:
                 #triangles.append(np.array([c,ca,abc]))
                 #triangles.append(np.array([ca,a,abc]))
 
-        self.allPoints = np.array(allPoints)
+        self._allPoints = np.array(allPoints)
 
     def hasPointInside(self, p):
         """
@@ -197,8 +201,8 @@ class Polyhedron:
                 
                     
     def plotAllPoints(self, plotter):
-        if self.allPoints.size > 0:
-            plotter.addPoints(self.allPoints, plotter.COLOR_SITES)
+        if self._allPoints.size > 0:
+            plotter.addPoints(self._allPoints, plotter.COLOR_SITES)
 
     def plot(self, plotter):
         if self._invisible == False:

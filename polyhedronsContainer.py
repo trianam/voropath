@@ -2,6 +2,7 @@ import numpy as np
 import scipy as sp
 import scipy.spatial
 import polyhedron
+import parallelepiped
 
 class PolyhedronsContainer:
     def __init__(self):
@@ -46,17 +47,7 @@ class PolyhedronsContainer:
         self._boundingBoxA = a
         self._boundingBoxB = b
 
-        c = [a[0], b[1], a[2]]
-        d = [b[0], a[1], a[2]]
-        e = [a[0], a[1], b[2]]
-        f = [b[0], b[1], a[2]]
-        g = [b[0], a[1], b[2]]
-        h = [a[0], b[1], b[2]]
-
-        self.addPolyhedron(polyhedron.Polyhedron(faces=np.array([
-            [a,g,e],[a,d,g],[d,f,g],[f,b,g],[f,b,h],[f,h,c],
-            [h,a,e],[h,c,a],[e,h,g],[h,b,g],[a,d,f],[a,f,c]
-            ]), invisible=invisible, maxEmptyArea=maxEmptyArea, boundingBox=True))
+        self.addPolyhedron(parallelepiped.Parallelepiped(a=a, b=b, invisible=invisible, maxEmptyArea=maxEmptyArea, boundingBox=True))
 
     def pointInsidePolyhedron(self, p):
         inside = False
