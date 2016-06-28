@@ -24,9 +24,9 @@ class Plotter:
     COLOR_LABELS = vtk.util.colors.blue
     COLOR_LENGTH = vtk.util.colors.red
 
-    _DEFAULT_LINE_THICKNESS = 0.05
-    _DEFAULT_POINT_THICKNESS = 0.2
-    _DEFAULT_BSPLINE_THICKNESS = 0.1
+    _DEFAULT_LINE_THICKNESS = 0.0005
+    _DEFAULT_POINT_THICKNESS = 0.002
+    _DEFAULT_BSPLINE_THICKNESS = 0.001
 
     class KeyPressInteractorStyle(vtk.vtkInteractorStyleUnicam):
         _screenshotFile = "/tmp/screenshot.png"

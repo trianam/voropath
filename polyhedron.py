@@ -209,7 +209,7 @@ class Polyhedron:
             plotter.addTriangles(self._faces, plotter.COLOR_OBSTACLE)
 
     def extractXmlTree(self, root):
-        xmlPolyhedron = ET.SubElement(root, 'polyhedron', invisible=str(self._invisible))
+        xmlPolyhedron = ET.SubElement(root, 'polyhedron', invisible=str(self._invisible), boundingBox=str(self._boundingBox))
         for face in self._faces:
             xmlFace = ET.SubElement(xmlPolyhedron, 'face')
             for vertex in face:

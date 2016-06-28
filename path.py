@@ -257,7 +257,7 @@ class Path:
         #[knots, coeff, degree]
         tck = [t,[x,y,z], self._bsplineDegree]
 
-        u=np.linspace(0,1,(max(polLen*5,100)),endpoint=True)
+        u=np.linspace(0,1,(max(polLen*5,1000)),endpoint=True)
 
         out = sp.interpolate.splev(u, tck)
         outD1 = sp.interpolate.splev(u, tck, 1)

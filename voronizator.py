@@ -217,6 +217,10 @@ class Voronizator:
                 if 'invisible' in xmlPolyhedron.attrib.keys():
                     invisible = bool(eval(xmlPolyhedron.attrib['invisible']))
 
+                boundingBox = False
+                if 'boundingBox' in xmlPolyhedron.attrib.keys():
+                    boundingBox = bool(eval(xmlPolyhedron.attrib['boundingBox']))
+
                 faces = []
                 for xmlFace in xmlPolyhedron.iter('face'):
                     vertexes = []
@@ -225,7 +229,7 @@ class Voronizator:
 
                     faces.append(vertexes)
                     
-                newPolyhedron = polyhedron.Polyhedron(faces=np.array(faces), invisible=invisible, maxEmptyArea=maxEmptyArea)
+                newPolyhedron = polyhedron.Polyhedron(faces=np.array(faces), invisible=invisible, maxEmptyArea=maxEmptyArea, boundingBox=boundingBox)
                 self._polyhedronsContainer.addPolyhedron(newPolyhedron)
 
     def _attachToGraphNear(self, start, end, prune):
