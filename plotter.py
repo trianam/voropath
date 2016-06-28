@@ -31,6 +31,7 @@ class Plotter:
     class KeyPressInteractorStyle(vtk.vtkInteractorStyleUnicam):
         _screenshotFile = "/tmp/screenshot.png"
         _cameraFile = "/tmp/cameraData.dat"
+        _cameraFile2 = "/tmp/cameraData2.dat"
         def __init__(self, parent=None):
             self.AddObserver("KeyPressEvent", self._keyPressEvent)
             self.AddObserver("RightButtonPressEvent", self._mousePressEvent)
@@ -73,6 +74,20 @@ class Plotter:
                 print("Restore camera data from "+self._cameraFile)
 
                 with open(self._cameraFile, 'rb') as f:
+                    record = pickle.load(f)
+
+                    self._camera.SetPosition(record['position'])
+                    self._camera.SetFocalPoint(record['focalPoint'])
+                    self._camera.SetViewAngle(record['viewAngle'])
+                    self._camera.SetViewUp(record['viewUp'])
+                    self._camera.SetClippingRange(record['clippingRange'])
+
+                    self._renderWindow.Render()
+
+            elif obj.GetInteractor().GetKeySym() == "b":
+                print("Restore camera data from "+self._cameraFile2)
+
+                with open(self._cameraFile2, 'rb') as f:
                     record = pickle.load(f)
 
                     self._camera.SetPosition(record['position'])

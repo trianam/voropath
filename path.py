@@ -8,9 +8,9 @@ class Path:
     _initialTemperature = 10#1000
     _trials = 10#100
     _warmingRatio = 0.7#0.9
-    _minTemperature=0.000000001#0.00000001
+    _minTemperature=0.0000001#0.00000001
     _minDeltaEnergy=0.000001
-    _maxVlambdaPert = 1000.
+    _maxVlambdaPert = 100.
     _maxVertexPertFactor = 10.
     _initialVlambda = 0.
     _changeVlambdaProbability = 0.05
@@ -231,8 +231,8 @@ class Path:
                 newPath.append(n)
                 
             elif numVertexes == 2:
-                n1 = 0.33 * a + 0.67 * b
-                n2 = 0.33 * b + 0.67 * a
+                n1 = 0.33 * b + 0.67 * a
+                n2 = 0.33 * a + 0.67 * b
                 newPath.append(n1)
                 newPath.append(n2)
                 
