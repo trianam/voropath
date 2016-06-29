@@ -7,15 +7,22 @@ import scipy.interpolate
 class Path:
     _initialTemperature = 10#1000
     _trials = 10#100
-    _warmingRatio = 0.7#0.9
-    _minTemperature=0.0000001#0.00000001
+    _warmingRatio = 0.9#0.9
+    _minTemperature=0.00001#0.00000001
     _minDeltaEnergy=0.000001
-    _maxVlambdaPert = 100.
-    _maxVertexPertFactor = 10.
+    _maxVlambdaPert = 1000.
+    _maxVertexPertFactor = 100.
     _initialVlambda = 0.
     _changeVlambdaProbability = 0.05
-    _useArcLen = True
+    #====1
+    #_useArcLen = True
+    #_ratioCurvTorsLen = [0.1, 0.1, 0.8]
+    #====2
+    _useArcLen = False
     _ratioCurvTorsLen = [0.1, 0.1, 0.8]
+    #====3
+    #_useArcLen = True
+    #_ratioCurvTorsLen = [0.3, 0.3, 0.4]
 
     def __init__(self, bsplineDegree, adaptivePartition):
         self._bsplineDegree = bsplineDegree

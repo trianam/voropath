@@ -47,11 +47,6 @@ voronoi.makeVoroGraph(verbose=True)
 print('Write file', flush=True)
 record = {}
 record['voronoi'] = voronoi
-# record['minX'] = minX
-# record['minY'] = minY
-# record['minZ'] = minZ
-# record['maxX'] = maxX
-# record['maxY'] = maxY
-# record['maxZ'] = maxZ
+
 with open(fileName, 'wb') as f:
     pickle.dump(record, f)
