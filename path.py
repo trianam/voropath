@@ -6,23 +6,16 @@ import scipy.interpolate
 
 class Path:
     _initialTemperature = 10#1000
-    _trials = 10#100
-    _warmingRatio = 0.9#0.9
-    _minTemperature=0.00001#0.00000001
-    _minDeltaEnergy=0.000001
+    _trials = 100#100
+    _warmingRatio = 0.7#0.9
+    _minTemperature=0.001#0.00000001
+    _minDeltaEnergy=0.1
     _maxVlambdaPert = 1000.
     _maxVertexPertFactor = 100.
     _initialVlambda = 0.
     _changeVlambdaProbability = 0.05
-    #====1
-    #_useArcLen = True
-    #_ratioCurvTorsLen = [0.1, 0.1, 0.8]
-    #====2
     _useArcLen = False
     _ratioCurvTorsLen = [0.1, 0.1, 0.8]
-    #====3
-    #_useArcLen = True
-    #_ratioCurvTorsLen = [0.3, 0.3, 0.4]
 
     def __init__(self, bsplineDegree, adaptivePartition):
         self._bsplineDegree = bsplineDegree
@@ -95,7 +88,6 @@ class Path:
         tau, u, self._spline, splineD1, splineD2, splineD3, curv, tors, arcLength, polLength = self._splinePoints(self._vertexes)
         self._currentEnergy, self._maxCurvatureLength, self._currentConstraints = self._initializePathEnergy(self._vertexes, self._spline, splineD1, splineD2, self._vlambda)
 
-
         temperature = self._initialTemperature
         while True:
             initialEnergy = self._currentEnergy
@@ -111,9 +103,31 @@ class Path:
             temperature = temperature * self._warmingRatio
             if verbose:
                 print("T:{}; E:{}; DE:{}; L:{}; C:{}; ML:{}; MV:{}".format(temperature, self._currentEnergy, deltaEnergy, self._vlambda, self._currentConstraints, numMovedLambda, numMovedVertex), flush=True)
-                #print(self._vertexes)
 
             if (temperature < self._minTemperature) or (numMovedVertex > 0 and (deltaEnergy < self._minDeltaEnergy) and self._currentConstraints == 0.):
+                break
+        
+    def annealPro(self, verbose):
+        if verbose:
+            print('Anneal path', flush=True)
+
+        tau, u, self._spline, splineD1, splineD2, splineD3, curv, tors, arcLength, polLength = self._splinePoints(self._vertexes)
+        self._currentEnergy = self._initializePathEnergyPro(self._vertexes, self._spline, splineD1, splineD2)
+
+        temperature = self._initialTemperature
+        while True:
+            initialEnergy = self._currentEnergy
+            numMovedVertex = 0
+            for i in range(self._trials):
+                movedVertex = self._tryMovePro(temperature)
+                if movedVertex:
+                    numMovedVertex += 1
+            deltaEnergy = abs(initialEnergy - self._currentEnergy)
+            temperature = temperature * self._warmingRatio
+            if verbose:
+                print("T:{}; E:{}; DE:{}; MV:{}".format(temperature, self._currentEnergy, deltaEnergy, numMovedVertex), flush=True)
+
+            if (temperature < self._minTemperature) or (numMovedVertex > 0 and (deltaEnergy < self._minDeltaEnergy)):
                 break
 
 
@@ -353,6 +367,18 @@ class Path:
 
         return (energy, maxCurvatureLength, constraints)
 
+    def _initializePathEnergyPro(self, vertexes, spline, splineD1, splineD2):
+        tau, u, spline, splineD1, splineD2, splineD3, curv, tors, arcLength, polLength = self._splinePoints(vertexes)
+        if self._useArcLen:
+            length = arcLength
+        else:
+            length = polLength
+            
+        self._initialLength = length
+        energy = self._calculateMaxCurvatureLength(length, curv, tors)
+
+        return (energy)
+
     def _tryMove(self, temperature):
         """
         Move the path or lambda multipiers in a neighbouring state,
@@ -405,6 +431,25 @@ class Path:
 
         return (movedLambda, movedVertex)
 
+    def _tryMovePro(self, temperature):
+        movedVertex = False
+
+        newVertexes = np.copy(self._vertexes)
+        movedV = random.randint(1,len(self._vertexes) - 2) #don't change extremes
+
+        moveC = random.randint(0,self._dimC - 1)
+        newVertexes[movedV][moveC] = newVertexes[movedV][moveC] + (random.uniform(-1.,1.) * self._maxVertexPert)
+
+        if self._newPathFree(newVertexes):
+            newEnergy = self._calculatePathEnergyVertexPro(newVertexes)
+
+            if (newEnergy < self._currentEnergy) or (math.exp(-(newEnergy-self._currentEnergy)/temperature) >= random.random()):
+                self._vertexes = newVertexes
+                self._currentEnergy = newEnergy
+                movedVertex = True
+
+        return movedVertex
+
     def _calculatePathEnergyLambda(self, vlambda):
         """
         calculate the energy when lambda is moved.
@@ -427,6 +472,20 @@ class Path:
         energy = maxCurvatureLength + self._vlambda * constraints
             
         return (energy, maxCurvatureLength, constraints)
+
+    def _calculatePathEnergyVertexPro(self, vertexes):
+        """
+        calculate the energy when a vertex is moved and returns it.
+        """
+        tau, u, spline, splineD1, splineD2, splineD3, curv, tors, arcLength, polLength = self._splinePoints(vertexes)
+        if self._useArcLen:
+            length = arcLength
+        else:
+            length = polLength
+            
+        energy = self._calculateMaxCurvatureLength(length, curv, tors)
+
+        return energy
 
     def _calculatePolyLength(self, vertexes):
         length = 0.
@@ -464,3 +523,28 @@ class Path:
         constraints = pointsInside / len(spline)
 
         return constraints
+
+    def _newPathFree(self, newVertexes):
+        free = True
+        
+        if self._bsplineDegree == 2:
+            for toEval in range(2, len(newVertexes)):
+                if self._polyhedronsContainer.triangleIntersectsPolyhedrons(newVertexes[toEval-2], newVertexes[toEval-1], newVertexes[toEval]):
+                    free = False
+                    break
+
+
+        elif self._bsplineDegree == 3:
+            for toEval in range(3, len(newVertexes)):
+                if self._polyhedronsContainer.convexHullIntersectsPolyhedrons([newVertexes[toEval-3], newVertexes[toEval-2], newVertexes[toEval-1], newVertexes[toEval]]):
+                    free = False
+                    break
+
+        elif self._bsplineDegree == 4:
+            for toEval in range(4, len(newVertexes)):
+                if self._polyhedronsContainer.convexHullIntersectsPolyhedrons([newVertexes[toEval-4], newVertexes[toEval-3], newVertexes[toEval-2], newVertexes[toEval-1], newVertexes[toEval]]):
+                    free = False
+                    break
+
+        return free
+    

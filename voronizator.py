@@ -106,9 +106,9 @@ class Voronizator:
 
     def calculateShortestPath(self, start, end, attachMode='near', prune=True, useMethod='cleanPath', postSimplify=True, verbose=False, debug=False):
         """
-        useMethod: cleanPath; trijkstra; annealing; none
+        useMethod: cleanPath; trijkstra; annealing; annealingPro; none
         """
-        if useMethod == 'trijkstra' or useMethod == 'cleanPath' or useMethod == 'annealing' or useMethod == 'none':
+        if useMethod == 'trijkstra' or useMethod == 'cleanPath' or useMethod == 'annealing' or useMethod == 'annealingPro' or useMethod == 'none':
             if verbose:
                 print('Attach start and end points', flush=True)
             if attachMode=='near':
@@ -130,7 +130,7 @@ class Voronizator:
             path = self._extractPath(triPath, verbose)
             self._shortestPath.assignValues(path, self._polyhedronsContainer)
 
-            if useMethod == 'cleanPath':
+            if useMethod == 'cleanPath' or useMethod == 'annealingPro':
                 self._shortestPath.clean(verbose, debug)
             elif useMethod == 'annealing':
                 self._shortestPath.anneal(verbose)
@@ -141,6 +141,9 @@ class Voronizator:
                     self._shortestPath.addNAlignedVertexes(1, verbose, debug)        
                 if self._bsplineDegree == 4:
                     self._shortestPath.addNAlignedVertexes(2, verbose, debug)
+
+            if useMethod == 'annealingPro':
+                self._shortestPath.annealPro(verbose)
 
             if postSimplify:
                 self._shortestPath.simplify(verbose, debug)
