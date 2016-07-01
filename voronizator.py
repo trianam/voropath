@@ -268,11 +268,20 @@ class Voronizator:
             self._addNodeToTGraph(self._endId, end, minAttachE, minDistE, rightDirection=False)
 
     def _attachToGraphAll(self, start, end, prune):
+        attachToStart = []
+        attachToEnd = []
+
+        print(len(self._graph.node.items()))
         for node,nodeAttr in self._graph.node.items():
             if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(start, nodeAttr['coord'], intersectionMargin= self._pruningMargin)):
-                self._addNodeToTGraph(self._startId, start, node, np.linalg.norm(start - nodeAttr['coord']), rightDirection=True)
+                attachToStart.append((node,nodeAttr))
             if (not prune) or (not self._polyhedronsContainer.segmentIntersectPolyhedrons(end, nodeAttr['coord'], intersectionMargin= self._pruningMargin)):
-                self._addNodeToTGraph(self._endId, end, node, np.linalg.norm(end - nodeAttr['coord']), rightDirection=False)
+                attachToEnd.append((node,nodeAttr))
+
+        for node,nodeAttr in attachToStart:
+            self._addNodeToTGraph(self._startId, start, node, np.linalg.norm(start - nodeAttr['coord']), rightDirection=True)
+        for node,nodeAttr in attachToEnd:
+            self._addNodeToTGraph(self._endId, end, node, np.linalg.norm(end - nodeAttr['coord']), rightDirection=False)
 
     def _addNodeToTGraph(self, newId, coord, attachId, dist, rightDirection):
         self._graph.add_node(newId, coord=coord)

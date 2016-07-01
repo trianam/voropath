@@ -6,7 +6,7 @@ import pickle
 import plotter
 
 if len(sys.argv) >= 2:
-    if len(sys.argv) == 8:
+    if len(sys.argv) == 9:
         i = 2
         startPoint = np.array(tuple(eval(sys.argv[i])),dtype=float)
         i += 1
@@ -19,6 +19,8 @@ if len(sys.argv) >= 2:
         postSimplify = bool(eval(sys.argv[i]))
         i += 1
         adaptivePartition = bool(eval(sys.argv[i]))
+        i += 1
+        attachMethod = str(sys.argv[i])
     else:
         startPoint = np.array(tuple(eval(input('Insert start point (x,y,z): '))),dtype=float)
         endPoint = np.array(tuple(eval(input('Insert end point (x,y,z): '))),dtype=float)
@@ -26,6 +28,7 @@ if len(sys.argv) >= 2:
         useMethod = str(input('Wich method you want to use? (none/trijkstra/cleanPath/annealing): '))
         postSimplify = bool(eval(input('Do you want post processing? (True/False): ')))
         adaptivePartition = bool(eval(input('Do you want adaptive partition? (True/False): ')))
+        attachMethod = str(input('Wich method you want to use to attach extremes? (near/all): '))
 
     print('Load file', flush=True)
     with open(sys.argv[1], 'rb') as f:
@@ -35,7 +38,7 @@ if len(sys.argv) >= 2:
     voronoi.setBsplineDegree(bsplineDegree)
     voronoi.setAdaptivePartition(adaptivePartition)
 
-    voronoi.calculateShortestPath(startPoint, endPoint, 'near', useMethod=useMethod, postSimplify=postSimplify, verbose=True, debug=False)
+    voronoi.calculateShortestPath(startPoint, endPoint, attachMethod, useMethod=useMethod, postSimplify=postSimplify, verbose=True, debug=False)
 
     print('Build renderer, window and interactor', flush=True)
     plt = plotter.Plotter()
