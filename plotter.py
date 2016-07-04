@@ -569,4 +569,10 @@ class Plotter:
 
         self._rendererScene.AddActor(actor)
 
-    
+    def addGraphNodes(self, graph, color):
+        nodes = []
+        
+        for node in graph.nodes():
+            nodes.append((graph.node[node]['coord'][0], graph.node[node]['coord'][1], graph.node[node]['coord'][2]))
+
+        self.addPoints(nodes, color, thick=True)

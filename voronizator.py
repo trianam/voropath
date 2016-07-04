@@ -186,9 +186,15 @@ class Voronizator:
 
     def plotGraph(self, plotter, verbose=False):
         if verbose:
-            print('Plot shortest path', flush=True)
+            print('Plot graph edges', flush=True)
 
         plotter.addGraph(self._graph, plotter.COLOR_GRAPH)
+
+    def plotGraphNodes(self, plotter, verbose=False):
+        if verbose:
+            print('Plot graph nodes', flush=True)
+
+        plotter.addGraphNodes(self._graph, plotter.COLOR_GRAPH)
 
     def extractXmlTree(self, root):
         if self._polyhedronsContainer.hasBoundingBox:

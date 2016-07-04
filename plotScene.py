@@ -5,14 +5,17 @@ import pickle
 import plotter
 
 if len(sys.argv) >= 2:
-    if len(sys.argv) == 4:
+    if len(sys.argv) == 5:
         i = 2
         plotSites = bool(eval(sys.argv[i]))
         i += 1
         plotGraph = bool(eval(sys.argv[i]))
+        i += 1
+        plotGraphNodes = bool(eval(sys.argv[i]))
     else:
         plotSites = bool(eval(input('Do you want to plot Voronoi sites? (True/False): ')))
-        plotGraph = bool(eval(input('Do you want to plot graph? (True/False): ')))
+        plotGraph = bool(eval(input('Do you want to plot graph edges? (True/False): ')))
+        plotGraphNodes = bool(eval(input('Do you want to plot graph nodes? (True/False): ')))
 
 
     print('Load file', flush=True)
@@ -29,6 +32,8 @@ if len(sys.argv) >= 2:
         voronoi.plotSites(plt, verbose = True)
     if plotGraph:
         voronoi.plotGraph(plt, verbose = True)
+    if plotGraphNodes:
+        voronoi.plotGraphNodes(plt, verbose = True)
 
     print('Render', flush=True)
     plt.draw()
