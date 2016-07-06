@@ -55,7 +55,6 @@ class Polyhedron:
         return math.sqrt(s * (s-a) * (s-b) *(s-c))
 
     _comb2 = lambda self,a,b: 0.5*a + 0.5*b
-    #_comb3 = lambda self,a,b,c: 0.33*a + 0.33*b + 0.33*c
 
     def distributePoints(self, maxEmptyArea):
         allPoints = []
@@ -79,18 +78,11 @@ class Polyhedron:
                 ab = self._comb2(a,b)
                 bc = self._comb2(b,c)
                 ca = self._comb2(c,a)
-                #abc = self._comb3(a,b,c)
 
                 triangles.append(np.array([a,ab,ca]))
                 triangles.append(np.array([ab,b,bc]))
                 triangles.append(np.array([bc,c,ca]))
                 triangles.append(np.array([ab,bc,ca]))
-                #triangles.append(np.array([a,ab,abc]))
-                #triangles.append(np.array([ab,b,abc]))
-                #triangles.append(np.array([b,bc,abc]))
-                #triangles.append(np.array([bc,c,abc]))
-                #triangles.append(np.array([c,ca,abc]))
-                #triangles.append(np.array([ca,a,abc]))
 
         self._allPoints = np.array(allPoints)
 
@@ -112,10 +104,6 @@ class Polyhedron:
                 if (p == chull.points[vertex]).all():
                     outside = True
                     break
-            # for simplex in chull.simplices:
-            #     if (p == chull.points[simplex[0]]).all() or (p == chull.points[simplex[1]]).all() or (p == chull.points[simplex[2]]).all():
-            #         outside = True
-            #         break
 
         return not outside
         

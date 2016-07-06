@@ -12,7 +12,6 @@ warnings.filterwarnings("error")
 class Plotter:
     COLOR_BG = vtk.util.colors.light_grey
     COLOR_BG_PLOT = vtk.util.colors.ghost_white
-    #vtk.util.colors.ivory
     COLOR_OBSTACLE = vtk.util.colors.banana
     COLOR_SITES = vtk.util.colors.cobalt
     COLOR_PATH = vtk.util.colors.brick
@@ -35,7 +34,6 @@ class Plotter:
         def __init__(self, parent=None):
             self.AddObserver("KeyPressEvent", self._keyPressEvent)
             self.AddObserver("RightButtonPressEvent", self._mousePressEvent)
-            #super(KeyPressInteractorStyle, self).__init__()
 
         def SetCamera(self, camera):
             self._camera = camera
@@ -139,7 +137,6 @@ class Plotter:
         self._renderWindowScene.AddRenderer(self._rendererScene)
         self._renderWindowInteractor = vtk.vtkRenderWindowInteractor()
         self._renderWindowInteractor.SetRenderWindow(self._renderWindowScene)
-        #self._interactorStyle = vtk.vtkInteractorStyleUnicam()
         self._interactorStyle = self.KeyPressInteractorStyle()
         self._interactorStyle.SetCamera(self._rendererScene.GetActiveCamera())
         self._interactorStyle.SetRenderer(self._rendererScene)
@@ -183,7 +180,6 @@ class Plotter:
         widget.SetOutlineColor(0.9300, 0.5700, 0.1300)
         widget.SetOrientationMarker(axes)
         widget.SetInteractor(self._renderWindowInteractor)
-        #widget.SetViewport(0.0, 0.0, 0.1, 0.1)
         widget.SetViewport(0.0, 0.0, 0.2, 0.4)
         widget.SetEnabled(True)
         widget.InteractiveOn()
@@ -212,7 +208,6 @@ class Plotter:
             self._contextViewPlotCurv.GetRenderWindow().SetMultiSamples(0)
             self._contextViewPlotCurv.GetInteractor().Initialize()
             self._contextViewPlotCurv.GetInteractor().SetInteractorStyle(self._contextInteractorStyleCurv)
-            #self._contextViewPlotCurv.GetInteractor().Start()
 
             self._contextViewPlotTors.GetRenderWindow().SetMultiSamples(0)
             self._contextViewPlotTors.GetInteractor().Initialize()
@@ -379,9 +374,6 @@ class Plotter:
         
         curvTorsArray = vtk.vtkDoubleArray()
 
-        #minCurv = minTors = minNd1Xd2 = float("inf")
-        #maxCurv = maxTors = float("-inf")
-        
         for i in range(len(u)):
             for j in range(numIntervals):
                 if u[i] >= tau[j] and u[i] < tau[j+1]:
@@ -391,9 +383,7 @@ class Plotter:
             curvArrays[j].InsertNextValue(curv[i])
             torsArrays[j].InsertNextValue(tors[i])
             
-            curvTorsArray.InsertNextValue(curv[i])# + abs(tors[i]))
-
-        #print("minCurv: {:e}; maxCurv: {:e}; minTors: {:e}; maxTors: {:e}; minNd1Xd2: {:e}".format(minCurv, maxCurv, minTors, maxTors, minNd1Xd2))
+            curvTorsArray.InsertNextValue(curv[i])
 
         for inter in range(numIntervals):
             plotTable = vtk.vtkTable()
@@ -506,43 +496,6 @@ class Plotter:
         actor.GetProperty().SetColor(color)
 
         self._rendererScene.AddActor(actor)
-
-
-        #self.addPolyLine(list(zip(out[0], out[1], out[2])), color, thick, thickness)
-
-    def addBSplineDEPRECATED(self, controlPolygon, degree, color, thick=False, thickness=_DEFAULT_BSPLINE_THICKNESS):
-        x = controlPolygon[:,0]
-        y = controlPolygon[:,1]
-        z = controlPolygon[:,2]
-    
-        polLen = 0.
-        for i in range(1, len(controlPolygon)):
-            polLen += sp.spatial.distance.euclidean(controlPolygon[i-1], controlPolygon[i])
-
-        t = range(len(controlPolygon))
-        ipl_t = np.linspace(0.0, len(controlPolygon) - 1, max(polLen*100,100))
-
-        x_tup = sp.interpolate.splrep(t, x, k = degree)
-        y_tup = sp.interpolate.splrep(t, y, k = degree)
-        z_tup = sp.interpolate.splrep(t, z, k = degree)
-
-        x_list = list(x_tup)
-        xl = x.tolist()
-        x_list[1] = xl + [0.0, 0.0, 0.0, 0.0]
-
-        y_list = list(y_tup)
-        yl = y.tolist()
-        y_list[1] = yl + [0.0, 0.0, 0.0, 0.0]
-
-        z_list = list(z_tup)
-        zl = z.tolist()
-        z_list[1] = zl + [0.0, 0.0, 0.0, 0.0]
-
-        x_i = sp.interpolate.splev(ipl_t, x_list)
-        y_i = sp.interpolate.splev(ipl_t, y_list)
-        z_i = sp.interpolate.splev(ipl_t, z_list)
-
-        self.addPolyLine(list(zip(x_i, y_i, z_i)), color, thick, thickness)
 
     def addGraph(self, graph, color):
         vtkPoints = vtk.vtkPoints()

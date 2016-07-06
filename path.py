@@ -5,24 +5,17 @@ import scipy as sp
 import scipy.interpolate
 
 class Path:
-    _initialTemperature = 10#1000
-    _trials = 10#100
-    _warmingRatio = 0.9#0.9
-    _minTemperature=0.00001#0.00000001
+    _initialTemperature = 10
+    _trials = 10
+    _warmingRatio = 0.9
+    _minTemperature=0.00001
     _minDeltaEnergy=0.000001
     _maxVlambdaPert = 1000.
     _maxVertexPertFactor = 100.
     _initialVlambda = 0.
     _changeVlambdaProbability = 0.05
-    #====1
-    #_useArcLen = True
-    #_ratioCurvTorsLen = [0.1, 0.1, 0.8]
-    #====2
     _useArcLen = False
     _ratioCurvTorsLen = [0.1, 0.1, 0.8]
-    #====3
-    #_useArcLen = True
-    #_ratioCurvTorsLen = [0.3, 0.3, 0.4]
 
     def __init__(self, bsplineDegree, adaptivePartition):
         self._bsplineDegree = bsplineDegree
@@ -111,7 +104,6 @@ class Path:
             temperature = temperature * self._warmingRatio
             if verbose:
                 print("T:{}; E:{}; DE:{}; L:{}; C:{}; ML:{}; MV:{}".format(temperature, self._currentEnergy, deltaEnergy, self._vlambda, self._currentConstraints, numMovedLambda, numMovedVertex), flush=True)
-                #print(self._vertexes)
 
             if (temperature < self._minTemperature) or (numMovedVertex > 0 and (deltaEnergy < self._minDeltaEnergy) and self._currentConstraints == 0.):
                 break
@@ -144,7 +136,6 @@ class Path:
                 if first:
                     intersectPrec = False
                 else:
-                    #a1 = self._vertexes[i-2]
                     intersectPrec,nihil = self._polyhedronsContainer.triangleIntersectPolyhedrons(a1, a, b)
 
                 if i == len(self._vertexes)-2:
@@ -289,11 +280,11 @@ class Path:
             Nd1 = np.linalg.norm(splineD1[i])
 
             currCurv = 0.
-            if Nd1 >0.: #>= 1.:
+            if Nd1 >0.:
                 currCurv = Nd1Xd2 / math.pow(Nd1,3)
 
             currTors = 0.
-            if self._bsplineDegree >= 3 and Nd1Xd2 > 0.: #>= 1.:
+            if self._bsplineDegree >= 3 and Nd1Xd2 > 0.:
                 try:
                     currTors = np.dot(d1Xd2, splineD3[i]) / math.pow(Nd1Xd2, 2)
                 except RuntimeWarning:
@@ -432,7 +423,6 @@ class Path:
         length = 0.
         for i in range(1, len(vertexes)):
             length += sp.spatial.distance.euclidean(vertexes[i-1], vertexes[i])
-            #length += np.linalg.norm(np.subtract(vertexes[i], vertexes[i-1]))
         return length
 
     def _calculateMaxCurvatureLength(self, length, curv, tors):
